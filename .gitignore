@@ -20,3 +20,31 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Generated map output
+full_map.png
+outputs/
+exports/
+screenshots/
+
+# Python tooling/cache
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build/package output
+build/
+dist/
+*.egg-info/
+
+# Browser/frontend future
+node_modules/
+.vite/
+.next/
+.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
