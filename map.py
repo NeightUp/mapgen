@@ -16,7 +16,7 @@ class TileImages:
             "ice": self._load("ice.png"),
             "tundra": self._load("tundra.png"),
             "high_mountain": self._load("high_mountain.png"),
-            "mountain": self._load("mountans.png"),
+            "mountain": self._load("mountains.png"),
             "hills": self._load("hills.png"),
             "plains": self._load("plains.png"),
             "ocean": self._load("water.png"),
