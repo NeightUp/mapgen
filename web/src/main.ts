@@ -1,60 +1,58 @@
 import './style.css'
-import typescriptLogo from './assets/typescript.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import { setupCounter } from './counter.ts'
+import { createSampleMap } from './sampleMap.ts'
+import { renderHexMap } from './renderCanvas.ts'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.ts</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+<main class="app-shell">
+  <header class="app-header">
+    <div>
+      <h1>Mapgen</h1>
+      <p class="status-line">Browser prototype: hardcoded sample data rendered as solid-color Canvas hexes.</p>
+    </div>
+    <div class="map-meta" aria-label="Prototype map metadata">
+      <span>Phase 3A/3B</span>
+      <span id="tile-count"></span>
+    </div>
+  </header>
 
-<div class="ticks"></div>
-
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://www.typescriptlang.org" target="_blank">
-          <img class="button-icon" src="${typescriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
-
-<div class="ticks"></div>
-<section id="spacer"></section>
+  <section class="workspace" aria-label="Map browser prototype">
+    <aside class="sidebar">
+      <h2>Sample Map</h2>
+      <dl>
+        <div>
+          <dt>Source</dt>
+          <dd>TypeScript placeholder</dd>
+        </div>
+        <div>
+          <dt>Renderer</dt>
+          <dd>HTML Canvas</dd>
+        </div>
+        <div>
+          <dt>Grid</dt>
+          <dd>Enabled</dd>
+        </div>
+      </dl>
+    </aside>
+    <div class="canvas-panel">
+      <canvas id="map-canvas" aria-label="Solid-color hex map prototype"></canvas>
+    </div>
+  </section>
+</main>
 `
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+const sampleMap = createSampleMap()
+const canvas = document.querySelector<HTMLCanvasElement>('#map-canvas')!
+const tileCount = document.querySelector<HTMLSpanElement>('#tile-count')!
+
+tileCount.textContent = `${sampleMap.cols} x ${sampleMap.rows} tiles`
+
+const draw = () => {
+  renderHexMap(canvas, sampleMap, {
+    drawGrid: true,
+    hexSize: 18,
+    padding: 24,
+  })
+}
+
+draw()
+window.addEventListener('resize', draw)
