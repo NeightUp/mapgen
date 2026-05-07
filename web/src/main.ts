@@ -77,8 +77,10 @@ let viewport: MapViewport = {
   maxZoom: 8,
 }
 let isPanning = false
+let isViewFitted = true
 let lastPointerX = 0
 let lastPointerY = 0
+let resizeFrame = 0
 
 const draw = () => {
   renderHexMap(canvas, currentMap, {
@@ -96,13 +98,20 @@ function updateMapDetails(map: HexMap, source: string): void {
   mapSeed.textContent = map.seed === null ? 'None' : String(map.seed)
 }
 
-function resetView(): void {
+function fitViewportToCanvas(): void {
+  const metrics = getViewMetrics(canvas, currentMap, VIEW_PADDING, PREFERRED_HEX_SIZE)
+
   viewport = {
     ...viewport,
-    offsetX: 0,
-    offsetY: 0,
+    offsetX: metrics.originX,
+    offsetY: metrics.originY,
     zoom: 1,
   }
+}
+
+function resetView(): void {
+  fitViewportToCanvas()
+  isViewFitted = true
   draw()
 }
 
@@ -124,18 +133,16 @@ function zoomAt(clientX: number, clientY: number, nextZoom: number): void {
   const rect = canvas.getBoundingClientRect()
   const mouseX = clientX - rect.left
   const mouseY = clientY - rect.top
-  const metrics = getViewMetrics(canvas, currentMap, VIEW_PADDING, PREFERRED_HEX_SIZE)
-  const originX = metrics.originX + viewport.offsetX
-  const originY = metrics.originY + viewport.offsetY
-  const mapX = (mouseX - originX) / viewport.zoom
-  const mapY = (mouseY - originY) / viewport.zoom
+  const mapX = (mouseX - viewport.offsetX) / viewport.zoom
+  const mapY = (mouseY - viewport.offsetY) / viewport.zoom
 
   viewport = {
     ...viewport,
-    offsetX: mouseX - metrics.originX - mapX * clampedZoom,
-    offsetY: mouseY - metrics.originY - mapY * clampedZoom,
+    offsetX: mouseX - mapX * clampedZoom,
+    offsetY: mouseY - mapY * clampedZoom,
     zoom: clampedZoom,
   }
+  isViewFitted = false
   draw()
 }
 
@@ -176,6 +183,7 @@ canvas.addEventListener('pointermove', (event) => {
     offsetX: viewport.offsetX + event.clientX - lastPointerX,
     offsetY: viewport.offsetY + event.clientY - lastPointerY,
   }
+  isViewFitted = false
   lastPointerX = event.clientX
   lastPointerY = event.clientY
   draw()
@@ -206,5 +214,14 @@ zoomOutButton.addEventListener('click', () => zoomFromCenter(1 / ZOOM_STEP))
 resetViewButton.addEventListener('click', resetView)
 zoomInButton.addEventListener('click', () => zoomFromCenter(ZOOM_STEP))
 
-window.addEventListener('resize', draw)
+window.addEventListener('resize', () => {
+  window.cancelAnimationFrame(resizeFrame)
+  resizeFrame = window.requestAnimationFrame(() => {
+    if (isViewFitted) {
+      fitViewportToCanvas()
+    }
+
+    draw()
+  })
+})
 void boot()

@@ -49,8 +49,8 @@ export function renderHexMap(
   resizeCanvas(canvas)
   const metrics = getViewMetrics(canvas, map, padding, options.hexSize ?? 18)
   const viewport = options.viewport ?? {
-    offsetX: 0,
-    offsetY: 0,
+    offsetX: metrics.originX,
+    offsetY: metrics.originY,
     zoom: 1,
     minZoom: 0.5,
     maxZoom: 6,
@@ -61,7 +61,7 @@ export function renderHexMap(
   context.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1)
   context.fillStyle = '#0e1820'
   context.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight)
-  context.translate(metrics.originX + viewport.offsetX, metrics.originY + viewport.offsetY)
+  context.translate(viewport.offsetX, viewport.offsetY)
   context.scale(viewport.zoom, viewport.zoom)
 
   for (const tile of map.tiles) {
