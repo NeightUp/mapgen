@@ -1,8 +1,10 @@
 import './style.css'
 import type { HexMap, Terrain } from './mapTypes.ts'
+import { generateBrowserMap } from './browserGenerator.ts'
 import { downloadCanvasPng, downloadJson } from './downloads.ts'
 import { loadMapJson } from './loadMapJson.ts'
 import { createSampleMap } from './sampleMap.ts'
+import { randomSeed } from './seededRandom.ts'
 import {
   getViewMetrics,
   type MapViewport,
@@ -70,6 +72,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <input id="grid-toggle" type="checkbox" checked />
         <span>Show grid</span>
       </label>
+      <div class="seed-controls" aria-label="Seed controls">
+        <label for="seed-input">Seed</label>
+        <input id="seed-input" type="number" inputmode="numeric" placeholder="Enter seed" />
+        <button id="generate-seed" type="button">Generate from Seed</button>
+        <button id="random-seed" type="button">Random Seed</button>
+        <button id="load-json-sample" type="button">Load Sample JSON</button>
+      </div>
       <div class="viewer-controls" aria-label="Map view controls">
         <button id="zoom-out" type="button">-</button>
         <button id="reset-view" type="button">Reset View</button>
@@ -103,6 +112,10 @@ const mapSeed = document.querySelector<HTMLElement>('#map-seed')!
 const zoomLevel = document.querySelector<HTMLElement>('#zoom-level')!
 const gridToggle = document.querySelector<HTMLInputElement>('#grid-toggle')!
 const terrainLegend = document.querySelector<HTMLUListElement>('#terrain-legend')!
+const seedInput = document.querySelector<HTMLInputElement>('#seed-input')!
+const generateSeedButton = document.querySelector<HTMLButtonElement>('#generate-seed')!
+const randomSeedButton = document.querySelector<HTMLButtonElement>('#random-seed')!
+const loadJsonSampleButton = document.querySelector<HTMLButtonElement>('#load-json-sample')!
 const zoomOutButton = document.querySelector<HTMLButtonElement>('#zoom-out')!
 const resetViewButton = document.querySelector<HTMLButtonElement>('#reset-view')!
 const zoomInButton = document.querySelector<HTMLButtonElement>('#zoom-in')!
@@ -142,6 +155,13 @@ function updateMapDetails(map: HexMap, source: string): void {
   mapSeed.textContent = map.seed === null ? 'None' : String(map.seed)
 }
 
+function setCurrentMap(map: HexMap, source: string): void {
+  currentMap = map
+  updateMapDetails(currentMap, source)
+  seedInput.value = currentMap.seed === null ? '' : String(currentMap.seed)
+  resetView()
+}
+
 function renderTerrainLegend(): void {
   terrainLegend.innerHTML = TERRAIN_ORDER.map(
     (terrain) => `
@@ -175,6 +195,28 @@ function updateZoomLevel(): void {
 
 function showStatus(message: string): void {
   statusLine.textContent = message
+}
+
+function seedFromInput(): number | null {
+  const value = Number(seedInput.value)
+
+  if (!Number.isInteger(value)) {
+    return null
+  }
+
+  return value
+}
+
+function generateFromSeed(seed: number): void {
+  seedInput.value = String(seed)
+  setCurrentMap(generateBrowserMap(seed), 'Browser generated seed')
+  showStatus(`Generated browser placeholder map from seed ${seed}.`)
+}
+
+async function loadJsonSample(): Promise<void> {
+  currentMap = await loadMapJson('/sample-map.json')
+  setCurrentMap(currentMap, 'JSON sample')
+  showStatus('Loaded tracked Python export sample from /sample-map.json.')
 }
 
 function clampZoom(zoom: number): number {
@@ -224,16 +266,11 @@ function scheduleSettledDraw(fitView: boolean): void {
 
 async function boot(): Promise<void> {
   try {
-    currentMap = await loadMapJson('/sample-map.json')
-    statusLine.textContent = 'Loaded tracked Python export sample from /sample-map.json.'
-    updateMapDetails(currentMap, 'JSON sample')
+    await loadJsonSample()
   } catch (error) {
-    currentMap = createSampleMap()
-    statusLine.textContent = `JSON sample failed to load; using TypeScript fallback sample. ${String(error)}`
-    updateMapDetails(currentMap, 'TypeScript fallback sample')
+    setCurrentMap(createSampleMap(), 'TypeScript fallback sample')
+    showStatus(`JSON sample failed to load; using TypeScript fallback sample. ${String(error)}`)
   }
-
-  resetView()
 }
 
 canvas.addEventListener('pointerdown', (event) => {
@@ -284,6 +321,24 @@ canvas.addEventListener(
 gridToggle.addEventListener('change', () => {
   isGridVisible = gridToggle.checked
   draw()
+})
+
+generateSeedButton.addEventListener('click', () => {
+  const seed = seedFromInput()
+
+  if (seed === null) {
+    showStatus('Enter an integer seed before generating.')
+    return
+  }
+
+  generateFromSeed(seed)
+})
+randomSeedButton.addEventListener('click', () => generateFromSeed(randomSeed()))
+loadJsonSampleButton.addEventListener('click', () => {
+  void loadJsonSample().catch((error: unknown) => {
+    setCurrentMap(createSampleMap(), 'TypeScript fallback sample')
+    showStatus(`JSON sample failed to load; using TypeScript fallback sample. ${String(error)}`)
+  })
 })
 
 zoomOutButton.addEventListener('click', () => zoomFromCenter(1 / ZOOM_STEP))
