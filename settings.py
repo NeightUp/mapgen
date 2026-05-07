@@ -37,3 +37,17 @@ HILLS_COLOR = (43, 77, 27)
 MOUNTAIN_COLOR = (150, 150, 150)
 HIGH_MOUNTAIN_COLOR = (200, 200, 200)
 SAND_COLOR = (150, 121, 61)
+
+TERRAIN_COLORS = {
+    "ice": WHITE,
+    "tundra": TUNDRA_COLOR,
+    "high_mountain": HIGH_MOUNTAIN_COLOR,
+    "mountain": MOUNTAIN_COLOR,
+    "hills": HILLS_COLOR,
+    "plains": PLAINS_COLOR,
+    "ocean": WATER_COLOR,
+    "deep_ocean": DEEP_WATER_COLOR,
+}
+
+GRID_COLOR = (24, 32, 32)
+HOVER_GRID_COLOR = WHITE
