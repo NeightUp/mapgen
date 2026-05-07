@@ -12,7 +12,7 @@ Each stage should leave the project in a working state.
 
 Active cleanup/prep branch:
 
-prep/browser-mapgen-foundation
+- prep/browser-mapgen-foundation
 
 The current branch is for preparing the project, documenting direction, and making the codebase easier to build from.
 
@@ -35,12 +35,12 @@ Tasks:
 
 Completion criteria:
 
-git status is clean.
-Generated map images are ignored.
-Cache files are ignored.
-The README is accurate.
-Design and roadmap docs exist.
-The current prototype still runs.
+- git status is clean.
+- Generated map images are ignored.
+- Cache files are ignored.
+- The README is accurate.
+- Design and roadmap docs exist.
+- The current prototype still runs.
 
 ## Phase 1 — Simplify Current Renderer
 
@@ -60,11 +60,11 @@ Tasks:
 
 Completion criteria:
 
-The map displays without tile image assets.
-The generated map still looks recognizable and useful.
-Terrain colors are clear.
-Hex alignment is controlled by code.
-The app still runs after the change.
+- The map displays without tile image assets.
+- The generated map still looks recognizable and useful.
+- Terrain colors are clear.
+- Hex alignment is controlled by code.
+- The app still runs after the change.
 
 ## Phase 2 — Separate Generator Data From Display
 
@@ -97,10 +97,10 @@ Suggested early JSON shape:
 
 Completion criteria:
 
-Generator output can be saved as JSON.
-JSON can represent the full map.
-Rendering reads from generated map data.
-Pygame is no longer mixed into the generator data model.
+- Generator output can be saved as JSON.
+- JSON can represent the full map.
+- Rendering reads from generated map data.
+- Pygame is no longer mixed into the generator data model.
 
 ## Phase 3 — Browser Prototype Spike
 
@@ -108,10 +108,10 @@ Goal: Prove the browser direction with a simple working prototype.
 
 Recommended stack:
 
-TypeScript
-Vite
-HTML Canvas
-Plain module-based generator/rendering code
+- TypeScript
+- Vite
+- HTML Canvas
+- Plain module-based generator/rendering code
 
 Tasks:
 
@@ -125,11 +125,11 @@ Tasks:
 
 Completion criteria:
 
-Browser app starts with a local dev command.
-Canvas draws a hex map.
-Pan and zoom work.
-Map data is separate from rendering code.
-The browser prototype can display exported data from the Python prototype.
+- Browser app starts with a local dev command.
+- Canvas draws a hex map.
+- Pan and zoom work.
+- Map data is separate from rendering code.
+- The browser prototype can display exported data from the Python prototype.
 
 ## Phase 4 — Port or Rebuild Generator in TypeScript
 
@@ -166,10 +166,10 @@ Use the Python prototype as reference, but implement the browser generator clean
 
 Completion criteria:
 
-Browser app can generate maps without Python.
-Same seed produces the same map.
-Terrain distribution is acceptable.
-Output is visible immediately in the Canvas renderer.
+- Browser app can generate maps without Python.
+- Same seed produces the same map.
+- Terrain distribution is acceptable.
+- Output is visible immediately in the Canvas renderer.
 
 ## Phase 5 — Browser Controls
 
@@ -188,11 +188,11 @@ Tasks:
 
 Completion criteria:
 
-User can generate a map from the browser UI.
-User can copy or reuse a seed.
-User can change basic settings.
-User can export an image.
-User can export JSON.
+- User can generate a map from the browser UI.
+- User can copy or reuse a seed.
+- User can change basic settings.
+- User can export an image.
+- User can export JSON.
 
 ## Phase 6 — Better World Layers
 
@@ -211,10 +211,10 @@ Tasks:
 
 Completion criteria:
 
-Maps have more believable climate/biome variation.
-Lakes and rivers improve map readability.
-Start-position scoring can identify reasonable player starts.
-These systems are still data-driven and renderer-independent.
+- Maps have more believable climate/biome variation.
+- Lakes and rivers improve map readability.
+- Start-position scoring can identify reasonable player starts.
+- These systems are still data-driven and renderer-independent.
 
 ## Phase 7 — V1 Release Prep
 
@@ -234,42 +234,43 @@ Tasks:
 
 Completion criteria:
 
-App runs from a public URL.
-App works on desktop.
-App is usable on mobile.
-Users can generate and export maps.
-The project has clear known limitations.
-V1 is ready for feedback.
+- App runs from a public URL.
+- App works on desktop.
+- App is usable on mobile.
+- Users can generate and export maps.
+- The project has clear known limitations.
+- V1 is ready for feedback.
 
 ## Recommended Development Rules
 
 ### Work in small branches
 
 Use branches like:
-prep/browser-mapgen-foundation
-feature/code-drawn-hexes
-feature/json-export
-feature/browser-prototype
-feature/canvas-renderer
+
+- prep/browser-mapgen-foundation
+- feature/code-drawn-hexes
+- feature/json-export
+- feature/browser-prototype
+- feature/canvas-renderer
 
 ### Keep main stable
 
 Only merge when:
 
-Code runs.
-Generated maps still display.
-The change has a clear purpose.
-The branch does not include accidental generated files.
+- Code runs.
+- Generated maps still display.
+- The change has a clear purpose.
+- The branch does not include accidental generated files.
 
 ### Do not commit generated files
 
 Do not commit:
 
-full_map.png
-cache files
-build folders
-local environment files
-temporary screenshots
+- full_map.png
+- cache files
+- build folders
+- local environment files
+- temporary screenshots
 
 ### Avoid major rewrites without checkpoints
 
@@ -279,14 +280,14 @@ Large changes should be broken into steps. If a change takes the project from �
 
 Immediate next steps:
 
-Finish repository cleanup.
-Add design and roadmap docs.
-Commit and push docs.
-Create a new branch for code-drawn hex rendering.
-Replace tile image rendering with solid-color code-drawn hexes.
-Confirm the prototype still runs.
-Add JSON export.
-Begin browser prototype.
+- Finish repository cleanup.
+- Add design and roadmap docs.
+- Commit and push docs.
+- Create a new branch for code-drawn hex rendering.
+- Replace tile image rendering with solid-color code-drawn hexes.
+- Confirm the prototype still runs.
+- Add JSON export.
+- Begin browser prototype.
 
 ## Long-Term Direction
 
