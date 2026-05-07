@@ -38,6 +38,7 @@ export const TERRAIN_COLORS: Record<Terrain, string> = {
 }
 
 const GRID_COLOR = 'rgba(24, 32, 32, 0.55)'
+const FILL_OVERDRAW_PX = 0.35
 
 export function renderHexMap(
   canvas: HTMLCanvasElement,
@@ -127,12 +128,12 @@ function drawTile(
   drawGrid: boolean,
 ): void {
   const center = hexCenter(tile.row, tile.col, hexSize)
-  const points = hexPoints(center.x, center.y, hexSize)
+  const fillPoints = hexPoints(center.x, center.y, hexSize + FILL_OVERDRAW_PX)
 
   context.beginPath()
-  context.moveTo(points[0].x, points[0].y)
+  context.moveTo(fillPoints[0].x, fillPoints[0].y)
 
-  for (const point of points.slice(1)) {
+  for (const point of fillPoints.slice(1)) {
     context.lineTo(point.x, point.y)
   }
 
@@ -141,6 +142,16 @@ function drawTile(
   context.fill()
 
   if (drawGrid) {
+    const gridPoints = hexPoints(center.x, center.y, hexSize)
+
+    context.beginPath()
+    context.moveTo(gridPoints[0].x, gridPoints[0].y)
+
+    for (const point of gridPoints.slice(1)) {
+      context.lineTo(point.x, point.y)
+    }
+
+    context.closePath()
     context.strokeStyle = GRID_COLOR
     context.lineWidth = 1
     context.stroke()
