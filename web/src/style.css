@@ -158,14 +158,24 @@ button {
   accent-color: var(--accent);
 }
 
-.viewer-controls {
+.viewer-controls,
+.download-controls {
   display: grid;
-  grid-template-columns: 42px 1fr 42px;
   gap: 8px;
   margin-top: 22px;
 }
 
-.viewer-controls button {
+.viewer-controls {
+  grid-template-columns: 42px 1fr 42px;
+}
+
+.download-controls {
+  grid-template-columns: 1fr;
+  margin-top: 10px;
+}
+
+.viewer-controls button,
+.download-controls button {
   min-height: 34px;
   border: 1px solid var(--border);
   border-radius: 5px;
@@ -173,11 +183,13 @@ button {
   cursor: pointer;
 }
 
-.viewer-controls button:hover {
+.viewer-controls button:hover,
+.download-controls button:hover {
   border-color: var(--accent);
 }
 
-.viewer-controls button:focus-visible {
+.viewer-controls button:focus-visible,
+.download-controls button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

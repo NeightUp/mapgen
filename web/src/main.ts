@@ -1,5 +1,6 @@
 import './style.css'
 import type { HexMap, Terrain } from './mapTypes.ts'
+import { downloadCanvasPng, downloadJson } from './downloads.ts'
 import { loadMapJson } from './loadMapJson.ts'
 import { createSampleMap } from './sampleMap.ts'
 import {
@@ -74,6 +75,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <button id="reset-view" type="button">Reset View</button>
         <button id="zoom-in" type="button">+</button>
       </div>
+      <div class="download-controls" aria-label="Download controls">
+        <button id="download-json" type="button">Download JSON</button>
+        <button id="download-png" type="button">Download PNG</button>
+      </div>
       <section class="terrain-legend" aria-label="Terrain legend">
         <h3>Terrain</h3>
         <ul id="terrain-legend"></ul>
@@ -101,6 +106,8 @@ const terrainLegend = document.querySelector<HTMLUListElement>('#terrain-legend'
 const zoomOutButton = document.querySelector<HTMLButtonElement>('#zoom-out')!
 const resetViewButton = document.querySelector<HTMLButtonElement>('#reset-view')!
 const zoomInButton = document.querySelector<HTMLButtonElement>('#zoom-in')!
+const downloadJsonButton = document.querySelector<HTMLButtonElement>('#download-json')!
+const downloadPngButton = document.querySelector<HTMLButtonElement>('#download-png')!
 let currentMap: HexMap = createSampleMap()
 let viewport: MapViewport = {
   offsetX: 0,
@@ -164,6 +171,10 @@ function resetView(): void {
 
 function updateZoomLevel(): void {
   zoomLevel.textContent = `${Math.round(viewport.zoom * 100)}%`
+}
+
+function showStatus(message: string): void {
+  statusLine.textContent = message
 }
 
 function clampZoom(zoom: number): number {
@@ -278,6 +289,15 @@ gridToggle.addEventListener('change', () => {
 zoomOutButton.addEventListener('click', () => zoomFromCenter(1 / ZOOM_STEP))
 resetViewButton.addEventListener('click', resetView)
 zoomInButton.addEventListener('click', () => zoomFromCenter(ZOOM_STEP))
+downloadJsonButton.addEventListener('click', () => {
+  downloadJson('mapgen-map.json', currentMap)
+  showStatus('JSON download started.')
+})
+downloadPngButton.addEventListener('click', () => {
+  void downloadCanvasPng('mapgen-map.png', canvas)
+    .then(() => showStatus('PNG download started.'))
+    .catch((error: unknown) => showStatus(`PNG download failed. ${String(error)}`))
+})
 
 const resizeObserver = new ResizeObserver(() => {
   scheduleSettledDraw(isViewFitted)
