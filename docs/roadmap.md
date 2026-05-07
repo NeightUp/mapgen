@@ -8,17 +8,49 @@ The goal is to move from the current Python/Pygame prototype toward a browser-ba
 
 Each stage should leave the project in a working state.
 
+## Current Status
+
+The project now has two working paths:
+
+- A preserved Python/Pygame prototype that generates maps, draws solid-color hexes, and exports map data as JSON to `exports/map_data.json`.
+- A browser prototype in `web/` using Vite, TypeScript, and HTML Canvas.
+
+The browser prototype currently:
+
+- Loads tracked sample map data from `web/public/sample-map.json`.
+- Renders hex maps on Canvas using solid terrain colors.
+- Supports pan, wheel zoom, zoom buttons, reset view, and resize-safe layout.
+- Supports grid toggling, terrain legend, metadata display, current-map JSON download, and visible-canvas PNG download.
+- Supports deterministic browser-side seed generation.
+- Includes generator controls for Sea Level, Mountain Amount, Roughness, and Reset Generator Settings.
+
+The browser generator is functional and structured after the Python generator, but it is not yet equivalent to the Python output. It still needs generator-quality work before the browser app should be considered a useful map generator rather than a capable prototype viewer.
+
+## Next Planned Work
+
+The next major work is generator quality and refinement, not basic browser setup.
+
+Near-term generator priorities:
+
+- Improve landmass variety and continent shapes.
+- Reduce coastal mountain-ring behavior.
+- Tune land/water and terrain distribution.
+- Improve elevation/noise behavior without adding unnecessary dependencies too early.
+- Add better settings feedback and eventually include generator settings in exported map data.
+- Begin moisture, temperature, and biome layers after elevation and terrain feel stable.
+- Add rivers and lakes later, after terrain/biome foundations are stronger.
+
 ## Current Branch
 
-Active cleanup/prep branch:
+Active branch:
 
-- prep/browser-mapgen-foundation
+- feature/generator-settings-controls
 
-The current branch is for preparing the project, documenting direction, and making the codebase easier to build from.
+The current branch is focused on browser-side generator controls and documentation updates after the browser prototype work.
 
 ## Phase 0 — Repository Cleanup
 
-Status: In progress
+Status: Complete
 
 Goal: Make the repository clean enough to work from safely.
 
@@ -44,6 +76,8 @@ Completion criteria:
 
 ## Phase 1 — Simplify Current Renderer
 
+Status: Complete
+
 Goal: Remove image tile dependency from the current prototype display path.
 
 The current code uses tile image assets. This helped the original prototype get working, but it creates extra complexity. For the next stage, the renderer should draw solid-color hexes directly in code.
@@ -67,6 +101,8 @@ Completion criteria:
 - The app still runs after the change.
 
 ## Phase 2 — Separate Generator Data From Display
+
+Status: Complete
 
 Goal: Make the generator output clean map data that can later be used by a browser renderer.
 
@@ -104,6 +140,8 @@ Completion criteria:
 
 ## Phase 3 — Browser Prototype Spike
 
+Status: Complete
+
 Goal: Prove the browser direction with a simple working prototype.
 
 Recommended stack:
@@ -115,23 +153,36 @@ Recommended stack:
 
 Tasks:
 
-- Create a browser app folder.
-- Add TypeScript/Vite project setup.
-- Create a Canvas renderer.
-- Draw solid-color hexes.
-- Add pan and zoom.
-- Add a hardcoded or imported map JSON sample.
-- Confirm the browser renderer can display generated map data.
+- Create a browser app folder. Complete.
+- Add TypeScript/Vite project setup. Complete.
+- Create a Canvas renderer. Complete.
+- Draw solid-color hexes. Complete.
+- Add pan and zoom. Complete.
+- Add a hardcoded or imported map JSON sample. Complete.
+- Confirm the browser renderer can display generated map data. Complete.
 
 Completion criteria:
 
-- Browser app starts with a local dev command.
-- Canvas draws a hex map.
-- Pan and zoom work.
-- Map data is separate from rendering code.
-- The browser prototype can display exported data from the Python prototype.
+- Browser app starts with a local dev command. Complete.
+- Canvas draws a hex map. Complete.
+- Pan and zoom work. Complete.
+- Map data is separate from rendering code. Complete.
+- The browser prototype can display exported data from the Python prototype. Complete via `web/public/sample-map.json`.
+
+Additional completed browser prototype work:
+
+- Reset view and resize-safe Canvas layout.
+- Grid toggle.
+- Terrain legend.
+- Map metadata display.
+- JSON download for current map data.
+- PNG download for current visible Canvas view.
+- Seed input, random seed, generated browser maps, and Load Sample JSON.
+- Sea Level, Mountain Amount, Roughness, and Reset Generator Settings controls.
 
 ## Phase 4 — Port or Rebuild Generator in TypeScript
+
+Status: In progress
 
 Goal: Move the generator into the browser app.
 
@@ -164,6 +215,22 @@ Recommended path:
 
 Use the Python prototype as reference, but implement the browser generator cleanly in TypeScript.
 
+Current state:
+
+- A browser-side generator exists and is deterministic by seed.
+- It uses the same map size and terrain thresholds as the Python prototype.
+- It mirrors the Python helper flow for elevation, ocean edges, polar bands, and terrain classification.
+- It uses dependency-free deterministic value noise instead of Python Perlin noise.
+- It exposes basic generation settings through the browser UI.
+
+Known generator-quality gaps:
+
+- Landmass variety needs improvement.
+- Coastal mountain-ring behavior needs reduction.
+- Terrain distribution needs tuning.
+- The browser generator does not yet match Python output.
+- Moisture, temperature, biome, lakes, and rivers are not implemented yet.
+
 Completion criteria:
 
 - Browser app can generate maps without Python.
@@ -173,26 +240,28 @@ Completion criteria:
 
 ## Phase 5 — Browser Controls
 
+Status: Partially complete
+
 Goal: Let users interact with generation settings.
 
 Tasks:
 
-- Add seed input.
-- Add random seed button.
-- Add regenerate button.
-- Add map size controls.
-- Add basic terrain threshold controls.
-- Add grid toggle.
-- Add export image button.
-- Add export JSON button.
+- Add seed input. Complete.
+- Add random seed button. Complete.
+- Add regenerate button. Complete as Generate from Seed.
+- Add map size controls. Not started.
+- Add basic terrain threshold controls. Partially complete through Sea Level, Mountain Amount, and Roughness.
+- Add grid toggle. Complete.
+- Add export image button. Complete for visible Canvas PNG.
+- Add export JSON button. Complete for current map data.
 
 Completion criteria:
 
-- User can generate a map from the browser UI.
-- User can copy or reuse a seed.
-- User can change basic settings.
-- User can export an image.
-- User can export JSON.
+- User can generate a map from the browser UI. Complete for the current browser generator.
+- User can copy or reuse a seed. Complete.
+- User can change basic settings. Partially complete.
+- User can export an image. Complete for visible Canvas PNG.
+- User can export JSON. Complete for current map data.
 
 ## Phase 6 — Better World Layers
 
@@ -280,14 +349,13 @@ Large changes should be broken into steps. If a change takes the project from �
 
 Immediate next steps:
 
-- Finish repository cleanup.
-- Add design and roadmap docs.
-- Commit and push docs.
-- Create a new branch for code-drawn hex rendering.
-- Replace tile image rendering with solid-color code-drawn hexes.
-- Confirm the prototype still runs.
-- Add JSON export.
-- Begin browser prototype.
+- Tune browser generator output quality.
+- Improve continent/landmass shapes and reduce coastal mountain clustering.
+- Review terrain distributions across several seeds.
+- Decide whether to keep improving the dependency-free noise path or add a small noise implementation later.
+- Add settings persistence or exported settings metadata if useful.
+- Begin moisture/temperature/biome layers once elevation and terrain are stable.
+- Keep Python prototype preserved as a reference.
 
 ## Long-Term Direction
 

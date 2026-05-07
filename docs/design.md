@@ -148,16 +148,27 @@ Good ideas should be recorded, but not all good ideas belong in V1.
 
 ## Current Prototype State
 
-The current prototype:
+The current project has two active prototype paths.
+
+The Python/Pygame prototype:
 
 - Is written in Python.
 - Uses Pygame for display.
 - Uses Perlin noise for base elevation.
 - Uses thresholds for deep ocean, ocean, plains, hills, mountains, high mountains, tundra, and ice.
 - Saves `full_map.png` as a generated local preview.
-- Uses simple tile assets for display.
+- Draws solid-color hexes in code instead of relying on image tile assets.
+- Exports structured map data to `exports/map_data.json`.
 
-The generator already creates decent world-scale maps. The next development goal is not to replace the generator immediately. The next goal is to simplify and separate the display pipeline.
+The browser prototype:
+
+- Lives in `web/`.
+- Uses Vite, TypeScript, and HTML Canvas.
+- Loads tracked sample JSON from `web/public/sample-map.json`.
+- Supports pan, zoom, reset view, grid toggle, terrain legend, metadata, and JSON/PNG downloads.
+- Includes deterministic browser-side seed generation and basic generator settings.
+
+The browser generator is currently a functional TypeScript approximation structured after the Python generator. It does not yet match Python output and still needs quality tuning, especially around landmass variety, coastal mountain behavior, and terrain distribution.
 
 ## Early Rendering Direction
 
