@@ -9,11 +9,17 @@ export function createSampleMap(): HexMap {
   for (let row = 0; row < ROWS; row += 1) {
     for (let col = 0; col < COLS; col += 1) {
       const elevation = sampleElevation(row, col)
+      const terrain = terrainFor(row, elevation)
       tiles.push({
         row,
         col,
         elevation,
-        terrain: terrainFor(row, elevation),
+        adjusted_elevation: elevation,
+        terrain,
+        moisture: 0,
+        temperature: 0,
+        biome: '',
+        features: [],
       })
     }
   }
@@ -21,6 +27,7 @@ export function createSampleMap(): HexMap {
   return {
     rows: ROWS,
     cols: COLS,
+    seed: null,
     tiles,
   }
 }

@@ -24,7 +24,6 @@ export function renderHexMap(
   map: HexMap,
   options: RenderOptions = {},
 ): void {
-  const hexSize = options.hexSize ?? 18
   const padding = options.padding ?? 24
   const context = canvas.getContext('2d')
 
@@ -33,6 +32,7 @@ export function renderHexMap(
   }
 
   resizeCanvas(canvas)
+  const hexSize = Math.min(options.hexSize ?? 18, fitHexSize(canvas, map, padding))
 
   context.clearRect(0, 0, canvas.width, canvas.height)
   context.save()
@@ -124,4 +124,13 @@ function mapBounds(map: HexMap, hexSize: number): { width: number; height: numbe
   const height = hexSize * (1.5 * (map.rows - 1) + 2)
 
   return { width, height }
+}
+
+function fitHexSize(canvas: HTMLCanvasElement, map: HexMap, padding: number): number {
+  const usableWidth = Math.max(1, canvas.clientWidth - padding * 2)
+  const usableHeight = Math.max(1, canvas.clientHeight - padding * 2)
+  const widthSize = usableWidth / (Math.sqrt(3) * (map.cols + 0.5))
+  const heightSize = usableHeight / (1.5 * (map.rows - 1) + 2)
+
+  return Math.max(3, Math.min(widthSize, heightSize))
 }

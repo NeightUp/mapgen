@@ -1,4 +1,6 @@
 import './style.css'
+import type { HexMap } from './mapTypes.ts'
+import { loadMapJson } from './loadMapJson.ts'
 import { createSampleMap } from './sampleMap.ts'
 import { renderHexMap } from './renderCanvas.ts'
 
@@ -7,10 +9,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="app-header">
     <div>
       <h1>Mapgen</h1>
-      <p class="status-line">Browser prototype: hardcoded sample data rendered as solid-color Canvas hexes.</p>
+      <p id="status-line" class="status-line">Loading JSON sample map...</p>
     </div>
     <div class="map-meta" aria-label="Prototype map metadata">
-      <span>Phase 3A/3B</span>
+      <span>Phase 3C</span>
       <span id="tile-count"></span>
     </div>
   </header>
@@ -21,11 +23,15 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <dl>
         <div>
           <dt>Source</dt>
-          <dd>TypeScript placeholder</dd>
+          <dd id="map-source">Loading</dd>
         </div>
         <div>
           <dt>Renderer</dt>
           <dd>HTML Canvas</dd>
+        </div>
+        <div>
+          <dt>Seed</dt>
+          <dd id="map-seed">Loading</dd>
         </div>
         <div>
           <dt>Grid</dt>
@@ -40,19 +46,40 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 </main>
 `
 
-const sampleMap = createSampleMap()
 const canvas = document.querySelector<HTMLCanvasElement>('#map-canvas')!
+const statusLine = document.querySelector<HTMLParagraphElement>('#status-line')!
 const tileCount = document.querySelector<HTMLSpanElement>('#tile-count')!
-
-tileCount.textContent = `${sampleMap.cols} x ${sampleMap.rows} tiles`
+const mapSource = document.querySelector<HTMLElement>('#map-source')!
+const mapSeed = document.querySelector<HTMLElement>('#map-seed')!
+let currentMap: HexMap = createSampleMap()
 
 const draw = () => {
-  renderHexMap(canvas, sampleMap, {
+  renderHexMap(canvas, currentMap, {
     drawGrid: true,
     hexSize: 18,
     padding: 24,
   })
 }
 
-draw()
+function updateMapDetails(map: HexMap, source: string): void {
+  tileCount.textContent = `${map.cols} x ${map.rows} tiles`
+  mapSource.textContent = source
+  mapSeed.textContent = map.seed === null ? 'None' : String(map.seed)
+}
+
+async function boot(): Promise<void> {
+  try {
+    currentMap = await loadMapJson('/sample-map.json')
+    statusLine.textContent = 'Loaded tracked Python export sample from /sample-map.json.'
+    updateMapDetails(currentMap, 'JSON sample')
+  } catch (error) {
+    currentMap = createSampleMap()
+    statusLine.textContent = `JSON sample failed to load; using TypeScript fallback sample. ${String(error)}`
+    updateMapDetails(currentMap, 'TypeScript fallback sample')
+  }
+
+  draw()
+}
+
 window.addEventListener('resize', draw)
+void boot()

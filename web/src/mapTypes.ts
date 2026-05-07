@@ -11,12 +11,18 @@ export type Terrain =
 export interface MapTile {
   row: number
   col: number
-  elevation: number
   terrain: Terrain
+  elevation: number
+  adjusted_elevation: number
+  moisture: number
+  temperature: number
+  biome: string
+  features: string[]
 }
 
 export interface HexMap {
   rows: number
   cols: number
+  seed: number | null
   tiles: MapTile[]
 }
