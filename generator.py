@@ -44,7 +44,7 @@ class WorldGenerator:
                     )
                 )
 
-        return WorldMap(self.rows, self.cols, tiles)
+        return WorldMap(self.rows, self.cols, tiles, seed=self.seed)
 
     def _build_elevation_noise(self):
         octaves = (3, 6, 12, 24, 48)

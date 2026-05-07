@@ -27,6 +27,7 @@ class Map:
         for map_tile in self.world.tiles:
             Tile(map_tile, self.camera_group)
         self.camera_group.draw_full_map()
+        self.world.export_json(BASE_DIR / "exports" / "map_data.json")
 
     def run(self):
         self.camera_group.custom_draw()
