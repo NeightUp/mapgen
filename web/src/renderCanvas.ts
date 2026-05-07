@@ -21,6 +21,11 @@ export interface ViewMetrics {
   originY: number
 }
 
+interface CanvasDisplaySize {
+  width: number
+  height: number
+}
+
 const TERRAIN_COLORS: Record<Terrain, string> = {
   ice: 'rgb(255, 255, 255)',
   tundra: 'rgb(175, 167, 123)',
@@ -46,8 +51,8 @@ export function renderHexMap(
     return
   }
 
-  resizeCanvas(canvas)
-  const metrics = getViewMetrics(canvas, map, padding, options.hexSize ?? 18)
+  const displaySize = resizeCanvas(canvas)
+  const metrics = getViewMetrics(canvas, map, padding, options.hexSize ?? 18, displaySize)
   const viewport = options.viewport ?? {
     offsetX: metrics.originX,
     offsetY: metrics.originY,
@@ -60,7 +65,7 @@ export function renderHexMap(
   context.save()
   context.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1)
   context.fillStyle = '#0e1820'
-  context.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight)
+  context.fillRect(0, 0, displaySize.width, displaySize.height)
   context.translate(viewport.offsetX, viewport.offsetY)
   context.scale(viewport.zoom, viewport.zoom)
 
@@ -76,11 +81,12 @@ export function getViewMetrics(
   map: HexMap,
   padding: number,
   preferredHexSize: number,
+  displaySize = getCanvasDisplaySize(canvas),
 ): ViewMetrics {
-  const baseHexSize = Math.min(preferredHexSize, fitHexSize(canvas, map, padding))
+  const baseHexSize = Math.min(preferredHexSize, fitHexSize(displaySize, map, padding))
   const bounds = mapBounds(map, baseHexSize)
-  const originX = Math.max(padding, (canvas.clientWidth - bounds.width) / 2)
-  const originY = Math.max(padding, (canvas.clientHeight - bounds.height) / 2)
+  const originX = Math.max(padding, (displaySize.width - bounds.width) / 2)
+  const originY = Math.max(padding, (displaySize.height - bounds.height) / 2)
 
   return {
     baseHexSize,
@@ -89,15 +95,29 @@ export function getViewMetrics(
   }
 }
 
-function resizeCanvas(canvas: HTMLCanvasElement): void {
+export function getCanvasDisplaySize(canvas: HTMLCanvasElement): CanvasDisplaySize {
+  const rect = canvas.getBoundingClientRect()
+  const width = rect.width || canvas.clientWidth
+  const height = rect.height || canvas.clientHeight
+
+  return {
+    width: Math.max(1, width),
+    height: Math.max(1, height),
+  }
+}
+
+function resizeCanvas(canvas: HTMLCanvasElement): CanvasDisplaySize {
+  const displaySize = getCanvasDisplaySize(canvas)
   const ratio = window.devicePixelRatio || 1
-  const width = Math.floor(canvas.clientWidth * ratio)
-  const height = Math.floor(canvas.clientHeight * ratio)
+  const width = Math.floor(displaySize.width * ratio)
+  const height = Math.floor(displaySize.height * ratio)
 
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width
     canvas.height = height
   }
+
+  return displaySize
 }
 
 function drawTile(
@@ -160,9 +180,9 @@ function mapBounds(map: HexMap, hexSize: number): { width: number; height: numbe
   return { width, height }
 }
 
-function fitHexSize(canvas: HTMLCanvasElement, map: HexMap, padding: number): number {
-  const usableWidth = Math.max(1, canvas.clientWidth - padding * 2)
-  const usableHeight = Math.max(1, canvas.clientHeight - padding * 2)
+function fitHexSize(displaySize: CanvasDisplaySize, map: HexMap, padding: number): number {
+  const usableWidth = Math.max(1, displaySize.width - padding * 2)
+  const usableHeight = Math.max(1, displaySize.height - padding * 2)
   const widthSize = usableWidth / (Math.sqrt(3) * (map.cols + 0.5))
   const heightSize = usableHeight / (1.5 * (map.rows - 1) + 2)
 

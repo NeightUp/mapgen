@@ -60,6 +60,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 `
 
 const canvas = document.querySelector<HTMLCanvasElement>('#map-canvas')!
+const canvasPanel = document.querySelector<HTMLElement>('.canvas-panel')!
 const statusLine = document.querySelector<HTMLParagraphElement>('#status-line')!
 const tileCount = document.querySelector<HTMLSpanElement>('#tile-count')!
 const mapSource = document.querySelector<HTMLElement>('#map-source')!
@@ -80,7 +81,7 @@ let isPanning = false
 let isViewFitted = true
 let lastPointerX = 0
 let lastPointerY = 0
-let resizeFrame = 0
+let layoutFrame = 0
 
 const draw = () => {
   renderHexMap(canvas, currentMap, {
@@ -110,9 +111,8 @@ function fitViewportToCanvas(): void {
 }
 
 function resetView(): void {
-  fitViewportToCanvas()
   isViewFitted = true
-  draw()
+  scheduleSettledDraw(true)
 }
 
 function updateZoomLevel(): void {
@@ -149,6 +149,19 @@ function zoomAt(clientX: number, clientY: number, nextZoom: number): void {
 function zoomFromCenter(multiplier: number): void {
   const rect = canvas.getBoundingClientRect()
   zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, viewport.zoom * multiplier)
+}
+
+function scheduleSettledDraw(fitView: boolean): void {
+  window.cancelAnimationFrame(layoutFrame)
+  layoutFrame = window.requestAnimationFrame(() => {
+    layoutFrame = window.requestAnimationFrame(() => {
+      if (fitView) {
+        fitViewportToCanvas()
+      }
+
+      draw()
+    })
+  })
 }
 
 async function boot(): Promise<void> {
@@ -214,14 +227,11 @@ zoomOutButton.addEventListener('click', () => zoomFromCenter(1 / ZOOM_STEP))
 resetViewButton.addEventListener('click', resetView)
 zoomInButton.addEventListener('click', () => zoomFromCenter(ZOOM_STEP))
 
-window.addEventListener('resize', () => {
-  window.cancelAnimationFrame(resizeFrame)
-  resizeFrame = window.requestAnimationFrame(() => {
-    if (isViewFitted) {
-      fitViewportToCanvas()
-    }
-
-    draw()
-  })
+const resizeObserver = new ResizeObserver(() => {
+  scheduleSettledDraw(isViewFitted)
 })
+resizeObserver.observe(canvasPanel)
+resizeObserver.observe(canvas)
+
+window.addEventListener('resize', () => scheduleSettledDraw(isViewFitted))
 void boot()
