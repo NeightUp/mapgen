@@ -20,16 +20,31 @@ interface NoiseLayer {
   seed: number
 }
 
-export function generateBrowserMap(seed: number): HexMap {
+export interface GeneratorSettings {
+  seaLevel: number
+  mountainAmount: number
+  roughness: number
+}
+
+export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
+  seaLevel: 0,
+  mountainAmount: 1,
+  roughness: 1,
+}
+
+export function generateBrowserMap(
+  seed: number,
+  settings: GeneratorSettings = DEFAULT_GENERATOR_SETTINGS,
+): HexMap {
   const noiseLayers = buildElevationNoise(seed)
   const polarRandom = createSeededRandom(seed ^ 0x9e3779b9)
   const tiles = []
 
   for (let row = 0; row < ROWS; row += 1) {
     for (let col = 0; col < COLS; col += 1) {
-      const elevation = elevationAt(row, col, noiseLayers)
+      const elevation = elevationAt(row, col, noiseLayers, settings)
       const adjustedElevation = classifyTerrain(row, col, elevation, polarRandom)
-      const terrain = terrainFromValue(adjustedElevation)
+      const terrain = terrainFromValue(adjustedElevation, settings)
 
       tiles.push({
         row,
@@ -60,7 +75,12 @@ function buildElevationNoise(seed: number): NoiseLayer[] {
   }))
 }
 
-function elevationAt(row: number, col: number, noiseLayers: NoiseLayer[]): number {
+function elevationAt(
+  row: number,
+  col: number,
+  noiseLayers: NoiseLayer[],
+  settings: GeneratorSettings,
+): number {
   const y = row / ROWS
   const x = col / COLS
   const layeredNoise = noiseLayers.reduce(
@@ -68,8 +88,10 @@ function elevationAt(row: number, col: number, noiseLayers: NoiseLayer[]): numbe
     0,
   )
   const continentMask = continentShape(x, y)
+  const roughness = clamp(settings.roughness, 0.4, 1.8)
+  const seaLevel = clamp(settings.seaLevel, -0.2, 0.2)
 
-  return layeredNoise * 0.52 + continentMask
+  return layeredNoise * 0.52 * roughness + continentMask - seaLevel
 }
 
 function classifyTerrain(
@@ -155,7 +177,11 @@ function applyPolarBands(row: number, elevation: number, random: () => number): 
   return elevation
 }
 
-function terrainFromValue(value: number): Terrain {
+function terrainFromValue(value: number, settings: GeneratorSettings): Terrain {
+  const mountainAmount = clamp(settings.mountainAmount, 0.5, 1.8)
+  const highMountainThreshold = HIGH_MOUNTAIN / mountainAmount
+  const mountainThreshold = MOUNTAIN / mountainAmount
+
   if (value === ICE) {
     return 'ice'
   }
@@ -164,11 +190,11 @@ function terrainFromValue(value: number): Terrain {
     return 'tundra'
   }
 
-  if (value >= HIGH_MOUNTAIN) {
+  if (value >= highMountainThreshold) {
     return 'high_mountain'
   }
 
-  if (value >= MOUNTAIN) {
+  if (value >= mountainThreshold) {
     return 'mountain'
   }
 
@@ -243,4 +269,8 @@ function lerp(a: number, b: number, amount: number): number {
 
 function randomInt(random: () => number, min: number, max: number): number {
   return Math.floor(random() * (max - min + 1)) + min
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
 }

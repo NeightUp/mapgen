@@ -1,6 +1,10 @@
 import './style.css'
 import type { HexMap, Terrain } from './mapTypes.ts'
-import { generateBrowserMap } from './browserGenerator.ts'
+import {
+  DEFAULT_GENERATOR_SETTINGS,
+  generateBrowserMap,
+  type GeneratorSettings,
+} from './browserGenerator.ts'
 import { downloadCanvasPng, downloadJson } from './downloads.ts'
 import { loadMapJson } from './loadMapJson.ts'
 import { createSampleMap } from './sampleMap.ts'
@@ -75,6 +79,21 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="seed-controls" aria-label="Seed controls">
         <label for="seed-input">Seed</label>
         <input id="seed-input" type="number" inputmode="numeric" placeholder="Enter seed" />
+        <label class="slider-control" for="sea-level">
+          <span>Sea Level</span>
+          <output id="sea-level-value"></output>
+          <input id="sea-level" type="range" min="-0.2" max="0.2" step="0.01" />
+        </label>
+        <label class="slider-control" for="mountain-amount">
+          <span>Mountain Amount</span>
+          <output id="mountain-amount-value"></output>
+          <input id="mountain-amount" type="range" min="0.5" max="1.8" step="0.05" />
+        </label>
+        <label class="slider-control" for="roughness">
+          <span>Roughness</span>
+          <output id="roughness-value"></output>
+          <input id="roughness" type="range" min="0.4" max="1.8" step="0.05" />
+        </label>
         <button id="generate-seed" type="button">Generate from Seed</button>
         <button id="random-seed" type="button">Random Seed</button>
         <button id="load-json-sample" type="button">Load Sample JSON</button>
@@ -113,6 +132,12 @@ const zoomLevel = document.querySelector<HTMLElement>('#zoom-level')!
 const gridToggle = document.querySelector<HTMLInputElement>('#grid-toggle')!
 const terrainLegend = document.querySelector<HTMLUListElement>('#terrain-legend')!
 const seedInput = document.querySelector<HTMLInputElement>('#seed-input')!
+const seaLevelInput = document.querySelector<HTMLInputElement>('#sea-level')!
+const seaLevelValue = document.querySelector<HTMLOutputElement>('#sea-level-value')!
+const mountainAmountInput = document.querySelector<HTMLInputElement>('#mountain-amount')!
+const mountainAmountValue = document.querySelector<HTMLOutputElement>('#mountain-amount-value')!
+const roughnessInput = document.querySelector<HTMLInputElement>('#roughness')!
+const roughnessValue = document.querySelector<HTMLOutputElement>('#roughness-value')!
 const generateSeedButton = document.querySelector<HTMLButtonElement>('#generate-seed')!
 const randomSeedButton = document.querySelector<HTMLButtonElement>('#random-seed')!
 const loadJsonSampleButton = document.querySelector<HTMLButtonElement>('#load-json-sample')!
@@ -207,9 +232,32 @@ function seedFromInput(): number | null {
   return value
 }
 
+function generatorSettingsFromInputs(): GeneratorSettings {
+  return {
+    seaLevel: Number(seaLevelInput.value),
+    mountainAmount: Number(mountainAmountInput.value),
+    roughness: Number(roughnessInput.value),
+  }
+}
+
+function initializeGeneratorSettings(): void {
+  seaLevelInput.value = String(DEFAULT_GENERATOR_SETTINGS.seaLevel)
+  mountainAmountInput.value = String(DEFAULT_GENERATOR_SETTINGS.mountainAmount)
+  roughnessInput.value = String(DEFAULT_GENERATOR_SETTINGS.roughness)
+  updateGeneratorSettingLabels()
+}
+
+function updateGeneratorSettingLabels(): void {
+  seaLevelValue.textContent = Number(seaLevelInput.value).toFixed(2)
+  mountainAmountValue.textContent = Number(mountainAmountInput.value).toFixed(2)
+  roughnessValue.textContent = Number(roughnessInput.value).toFixed(2)
+}
+
 function generateFromSeed(seed: number): void {
+  const settings = generatorSettingsFromInputs()
+
   seedInput.value = String(seed)
-  setCurrentMap(generateBrowserMap(seed), 'Browser generated seed')
+  setCurrentMap(generateBrowserMap(seed, settings), 'Browser generated seed')
   showStatus(`Generated browser placeholder map from seed ${seed}.`)
 }
 
@@ -323,6 +371,10 @@ gridToggle.addEventListener('change', () => {
   draw()
 })
 
+for (const input of [seaLevelInput, mountainAmountInput, roughnessInput]) {
+  input.addEventListener('input', updateGeneratorSettingLabels)
+}
+
 generateSeedButton.addEventListener('click', () => {
   const seed = seedFromInput()
 
@@ -361,4 +413,5 @@ resizeObserver.observe(canvasPanel)
 
 window.addEventListener('resize', () => scheduleSettledDraw(isViewFitted))
 renderTerrainLegend()
+initializeGeneratorSettings()
 void boot()
