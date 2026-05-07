@@ -94,6 +94,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <output id="roughness-value"></output>
           <input id="roughness" type="range" min="0.4" max="1.8" step="0.05" />
         </label>
+        <button id="reset-generator-settings" type="button">Reset Generator Settings</button>
         <button id="generate-seed" type="button">Generate from Seed</button>
         <button id="random-seed" type="button">Random Seed</button>
         <button id="load-json-sample" type="button">Load Sample JSON</button>
@@ -138,6 +139,9 @@ const mountainAmountInput = document.querySelector<HTMLInputElement>('#mountain-
 const mountainAmountValue = document.querySelector<HTMLOutputElement>('#mountain-amount-value')!
 const roughnessInput = document.querySelector<HTMLInputElement>('#roughness')!
 const roughnessValue = document.querySelector<HTMLOutputElement>('#roughness-value')!
+const resetGeneratorSettingsButton = document.querySelector<HTMLButtonElement>(
+  '#reset-generator-settings',
+)!
 const generateSeedButton = document.querySelector<HTMLButtonElement>('#generate-seed')!
 const randomSeedButton = document.querySelector<HTMLButtonElement>('#random-seed')!
 const loadJsonSampleButton = document.querySelector<HTMLButtonElement>('#load-json-sample')!
@@ -374,6 +378,11 @@ gridToggle.addEventListener('change', () => {
 for (const input of [seaLevelInput, mountainAmountInput, roughnessInput]) {
   input.addEventListener('input', updateGeneratorSettingLabels)
 }
+
+resetGeneratorSettingsButton.addEventListener('click', () => {
+  initializeGeneratorSettings()
+  showStatus('Generator settings reset to defaults.')
+})
 
 generateSeedButton.addEventListener('click', () => {
   const seed = seedFromInput()
