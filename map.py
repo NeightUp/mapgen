@@ -3,7 +3,15 @@ import math
 from pathlib import Path
 
 from generator import WorldGenerator
-from settings import *
+from settings import (
+    DEEP_WATER_COLOR,
+    GRID_COLOR,
+    HEX_SIZE,
+    HEX_VERTICAL_OVERLAP,
+    HOVER_GRID_COLOR,
+    PLAINS_COLOR,
+    TERRAIN_COLORS,
+)
 from tile import Tile
 
 BASE_DIR = Path(__file__).resolve().parent
