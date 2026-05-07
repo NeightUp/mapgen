@@ -231,7 +231,6 @@ const resizeObserver = new ResizeObserver(() => {
   scheduleSettledDraw(isViewFitted)
 })
 resizeObserver.observe(canvasPanel)
-resizeObserver.observe(canvas)
 
 window.addEventListener('resize', () => scheduleSettledDraw(isViewFitted))
 void boot()
