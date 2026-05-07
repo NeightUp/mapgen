@@ -1,12 +1,27 @@
 import './style.css'
-import type { HexMap } from './mapTypes.ts'
+import type { HexMap, Terrain } from './mapTypes.ts'
 import { loadMapJson } from './loadMapJson.ts'
 import { createSampleMap } from './sampleMap.ts'
-import { getViewMetrics, type MapViewport, renderHexMap } from './renderCanvas.ts'
+import {
+  getViewMetrics,
+  type MapViewport,
+  renderHexMap,
+  TERRAIN_COLORS,
+} from './renderCanvas.ts'
 
 const VIEW_PADDING = 24
 const PREFERRED_HEX_SIZE = 18
 const ZOOM_STEP = 1.2
+const TERRAIN_ORDER: Terrain[] = [
+  'deep_ocean',
+  'ocean',
+  'plains',
+  'hills',
+  'mountain',
+  'high_mountain',
+  'tundra',
+  'ice',
+]
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <main class="app-shell">
@@ -30,27 +45,39 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <dd id="map-source">Loading</dd>
         </div>
         <div>
-          <dt>Renderer</dt>
-          <dd>HTML Canvas</dd>
+          <dt>Rows</dt>
+          <dd id="map-rows">Loading</dd>
+        </div>
+        <div>
+          <dt>Cols</dt>
+          <dd id="map-cols">Loading</dd>
+        </div>
+        <div>
+          <dt>Tiles</dt>
+          <dd id="map-tiles">Loading</dd>
         </div>
         <div>
           <dt>Seed</dt>
           <dd id="map-seed">Loading</dd>
         </div>
         <div>
-          <dt>Grid</dt>
-          <dd>Enabled</dd>
-        </div>
-        <div>
           <dt>Zoom</dt>
           <dd id="zoom-level">100%</dd>
         </div>
       </dl>
+      <label class="grid-toggle">
+        <input id="grid-toggle" type="checkbox" checked />
+        <span>Show grid</span>
+      </label>
       <div class="viewer-controls" aria-label="Map view controls">
         <button id="zoom-out" type="button">-</button>
         <button id="reset-view" type="button">Reset View</button>
         <button id="zoom-in" type="button">+</button>
       </div>
+      <section class="terrain-legend" aria-label="Terrain legend">
+        <h3>Terrain</h3>
+        <ul id="terrain-legend"></ul>
+      </section>
     </aside>
     <div class="canvas-panel">
       <canvas id="map-canvas" aria-label="Solid-color hex map prototype"></canvas>
@@ -64,8 +91,13 @@ const canvasPanel = document.querySelector<HTMLElement>('.canvas-panel')!
 const statusLine = document.querySelector<HTMLParagraphElement>('#status-line')!
 const tileCount = document.querySelector<HTMLSpanElement>('#tile-count')!
 const mapSource = document.querySelector<HTMLElement>('#map-source')!
+const mapRows = document.querySelector<HTMLElement>('#map-rows')!
+const mapCols = document.querySelector<HTMLElement>('#map-cols')!
+const mapTiles = document.querySelector<HTMLElement>('#map-tiles')!
 const mapSeed = document.querySelector<HTMLElement>('#map-seed')!
 const zoomLevel = document.querySelector<HTMLElement>('#zoom-level')!
+const gridToggle = document.querySelector<HTMLInputElement>('#grid-toggle')!
+const terrainLegend = document.querySelector<HTMLUListElement>('#terrain-legend')!
 const zoomOutButton = document.querySelector<HTMLButtonElement>('#zoom-out')!
 const resetViewButton = document.querySelector<HTMLButtonElement>('#reset-view')!
 const zoomInButton = document.querySelector<HTMLButtonElement>('#zoom-in')!
@@ -77,6 +109,7 @@ let viewport: MapViewport = {
   minZoom: 0.6,
   maxZoom: 8,
 }
+let isGridVisible = true
 let isPanning = false
 let isViewFitted = true
 let lastPointerX = 0
@@ -85,7 +118,7 @@ let layoutFrame = 0
 
 const draw = () => {
   renderHexMap(canvas, currentMap, {
-    drawGrid: true,
+    drawGrid: isGridVisible,
     hexSize: PREFERRED_HEX_SIZE,
     padding: VIEW_PADDING,
     viewport,
@@ -96,7 +129,21 @@ const draw = () => {
 function updateMapDetails(map: HexMap, source: string): void {
   tileCount.textContent = `${map.cols} x ${map.rows} tiles`
   mapSource.textContent = source
+  mapRows.textContent = String(map.rows)
+  mapCols.textContent = String(map.cols)
+  mapTiles.textContent = String(map.tiles.length)
   mapSeed.textContent = map.seed === null ? 'None' : String(map.seed)
+}
+
+function renderTerrainLegend(): void {
+  terrainLegend.innerHTML = TERRAIN_ORDER.map(
+    (terrain) => `
+      <li>
+        <span class="terrain-swatch" style="background: ${TERRAIN_COLORS[terrain]}"></span>
+        <span>${terrain}</span>
+      </li>
+    `,
+  ).join('')
 }
 
 function fitViewportToCanvas(): void {
@@ -223,6 +270,11 @@ canvas.addEventListener(
   { passive: false },
 )
 
+gridToggle.addEventListener('change', () => {
+  isGridVisible = gridToggle.checked
+  draw()
+})
+
 zoomOutButton.addEventListener('click', () => zoomFromCenter(1 / ZOOM_STEP))
 resetViewButton.addEventListener('click', resetView)
 zoomInButton.addEventListener('click', () => zoomFromCenter(ZOOM_STEP))
@@ -233,4 +285,5 @@ const resizeObserver = new ResizeObserver(() => {
 resizeObserver.observe(canvasPanel)
 
 window.addEventListener('resize', () => scheduleSettledDraw(isViewFitted))
+renderTerrainLegend()
 void boot()

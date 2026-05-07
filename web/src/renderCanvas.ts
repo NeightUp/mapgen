@@ -26,7 +26,7 @@ interface CanvasDisplaySize {
   height: number
 }
 
-const TERRAIN_COLORS: Record<Terrain, string> = {
+export const TERRAIN_COLORS: Record<Terrain, string> = {
   ice: 'rgb(255, 255, 255)',
   tundra: 'rgb(175, 167, 123)',
   high_mountain: 'rgb(200, 200, 200)',
