@@ -2,7 +2,11 @@ import './style.css'
 import type { HexMap } from './mapTypes.ts'
 import { loadMapJson } from './loadMapJson.ts'
 import { createSampleMap } from './sampleMap.ts'
-import { renderHexMap } from './renderCanvas.ts'
+import { getViewMetrics, type MapViewport, renderHexMap } from './renderCanvas.ts'
+
+const VIEW_PADDING = 24
+const PREFERRED_HEX_SIZE = 18
+const ZOOM_STEP = 1.2
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <main class="app-shell">
@@ -37,7 +41,16 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <dt>Grid</dt>
           <dd>Enabled</dd>
         </div>
+        <div>
+          <dt>Zoom</dt>
+          <dd id="zoom-level">100%</dd>
+        </div>
       </dl>
+      <div class="viewer-controls" aria-label="Map view controls">
+        <button id="zoom-out" type="button">-</button>
+        <button id="reset-view" type="button">Reset View</button>
+        <button id="zoom-in" type="button">+</button>
+      </div>
     </aside>
     <div class="canvas-panel">
       <canvas id="map-canvas" aria-label="Solid-color hex map prototype"></canvas>
@@ -51,20 +64,84 @@ const statusLine = document.querySelector<HTMLParagraphElement>('#status-line')!
 const tileCount = document.querySelector<HTMLSpanElement>('#tile-count')!
 const mapSource = document.querySelector<HTMLElement>('#map-source')!
 const mapSeed = document.querySelector<HTMLElement>('#map-seed')!
+const zoomLevel = document.querySelector<HTMLElement>('#zoom-level')!
+const zoomOutButton = document.querySelector<HTMLButtonElement>('#zoom-out')!
+const resetViewButton = document.querySelector<HTMLButtonElement>('#reset-view')!
+const zoomInButton = document.querySelector<HTMLButtonElement>('#zoom-in')!
 let currentMap: HexMap = createSampleMap()
+let viewport: MapViewport = {
+  offsetX: 0,
+  offsetY: 0,
+  zoom: 1,
+  minZoom: 0.6,
+  maxZoom: 8,
+}
+let isPanning = false
+let lastPointerX = 0
+let lastPointerY = 0
 
 const draw = () => {
   renderHexMap(canvas, currentMap, {
     drawGrid: true,
-    hexSize: 18,
-    padding: 24,
+    hexSize: PREFERRED_HEX_SIZE,
+    padding: VIEW_PADDING,
+    viewport,
   })
+  updateZoomLevel()
 }
 
 function updateMapDetails(map: HexMap, source: string): void {
   tileCount.textContent = `${map.cols} x ${map.rows} tiles`
   mapSource.textContent = source
   mapSeed.textContent = map.seed === null ? 'None' : String(map.seed)
+}
+
+function resetView(): void {
+  viewport = {
+    ...viewport,
+    offsetX: 0,
+    offsetY: 0,
+    zoom: 1,
+  }
+  draw()
+}
+
+function updateZoomLevel(): void {
+  zoomLevel.textContent = `${Math.round(viewport.zoom * 100)}%`
+}
+
+function clampZoom(zoom: number): number {
+  return Math.min(viewport.maxZoom, Math.max(viewport.minZoom, zoom))
+}
+
+function zoomAt(clientX: number, clientY: number, nextZoom: number): void {
+  const clampedZoom = clampZoom(nextZoom)
+
+  if (clampedZoom === viewport.zoom) {
+    return
+  }
+
+  const rect = canvas.getBoundingClientRect()
+  const mouseX = clientX - rect.left
+  const mouseY = clientY - rect.top
+  const metrics = getViewMetrics(canvas, currentMap, VIEW_PADDING, PREFERRED_HEX_SIZE)
+  const originX = metrics.originX + viewport.offsetX
+  const originY = metrics.originY + viewport.offsetY
+  const mapX = (mouseX - originX) / viewport.zoom
+  const mapY = (mouseY - originY) / viewport.zoom
+
+  viewport = {
+    ...viewport,
+    offsetX: mouseX - metrics.originX - mapX * clampedZoom,
+    offsetY: mouseY - metrics.originY - mapY * clampedZoom,
+    zoom: clampedZoom,
+  }
+  draw()
+}
+
+function zoomFromCenter(multiplier: number): void {
+  const rect = canvas.getBoundingClientRect()
+  zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, viewport.zoom * multiplier)
 }
 
 async function boot(): Promise<void> {
@@ -78,8 +155,56 @@ async function boot(): Promise<void> {
     updateMapDetails(currentMap, 'TypeScript fallback sample')
   }
 
-  draw()
+  resetView()
 }
+
+canvas.addEventListener('pointerdown', (event) => {
+  isPanning = true
+  lastPointerX = event.clientX
+  lastPointerY = event.clientY
+  canvas.classList.add('is-panning')
+  canvas.setPointerCapture(event.pointerId)
+})
+
+canvas.addEventListener('pointermove', (event) => {
+  if (!isPanning) {
+    return
+  }
+
+  viewport = {
+    ...viewport,
+    offsetX: viewport.offsetX + event.clientX - lastPointerX,
+    offsetY: viewport.offsetY + event.clientY - lastPointerY,
+  }
+  lastPointerX = event.clientX
+  lastPointerY = event.clientY
+  draw()
+})
+
+canvas.addEventListener('pointerup', (event) => {
+  isPanning = false
+  canvas.classList.remove('is-panning')
+  canvas.releasePointerCapture(event.pointerId)
+})
+
+canvas.addEventListener('pointercancel', () => {
+  isPanning = false
+  canvas.classList.remove('is-panning')
+})
+
+canvas.addEventListener(
+  'wheel',
+  (event) => {
+    event.preventDefault()
+    const multiplier = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP
+    zoomAt(event.clientX, event.clientY, viewport.zoom * multiplier)
+  },
+  { passive: false },
+)
+
+zoomOutButton.addEventListener('click', () => zoomFromCenter(1 / ZOOM_STEP))
+resetViewButton.addEventListener('click', resetView)
+zoomInButton.addEventListener('click', () => zoomFromCenter(ZOOM_STEP))
 
 window.addEventListener('resize', draw)
 void boot()

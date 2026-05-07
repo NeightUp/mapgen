@@ -4,6 +4,21 @@ interface RenderOptions {
   drawGrid?: boolean
   hexSize?: number
   padding?: number
+  viewport?: MapViewport
+}
+
+export interface MapViewport {
+  offsetX: number
+  offsetY: number
+  zoom: number
+  minZoom: number
+  maxZoom: number
+}
+
+export interface ViewMetrics {
+  baseHexSize: number
+  originX: number
+  originY: number
 }
 
 const TERRAIN_COLORS: Record<Terrain, string> = {
@@ -32,23 +47,46 @@ export function renderHexMap(
   }
 
   resizeCanvas(canvas)
-  const hexSize = Math.min(options.hexSize ?? 18, fitHexSize(canvas, map, padding))
+  const metrics = getViewMetrics(canvas, map, padding, options.hexSize ?? 18)
+  const viewport = options.viewport ?? {
+    offsetX: 0,
+    offsetY: 0,
+    zoom: 1,
+    minZoom: 0.5,
+    maxZoom: 6,
+  }
 
   context.clearRect(0, 0, canvas.width, canvas.height)
   context.save()
   context.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1)
   context.fillStyle = '#0e1820'
   context.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight)
-
-  const bounds = mapBounds(map, hexSize)
-  const offsetX = Math.max(padding, (canvas.clientWidth - bounds.width) / 2)
-  const offsetY = Math.max(padding, (canvas.clientHeight - bounds.height) / 2)
+  context.translate(metrics.originX + viewport.offsetX, metrics.originY + viewport.offsetY)
+  context.scale(viewport.zoom, viewport.zoom)
 
   for (const tile of map.tiles) {
-    drawTile(context, tile, hexSize, offsetX, offsetY, options.drawGrid ?? true)
+    drawTile(context, tile, metrics.baseHexSize, options.drawGrid ?? true)
   }
 
   context.restore()
+}
+
+export function getViewMetrics(
+  canvas: HTMLCanvasElement,
+  map: HexMap,
+  padding: number,
+  preferredHexSize: number,
+): ViewMetrics {
+  const baseHexSize = Math.min(preferredHexSize, fitHexSize(canvas, map, padding))
+  const bounds = mapBounds(map, baseHexSize)
+  const originX = Math.max(padding, (canvas.clientWidth - bounds.width) / 2)
+  const originY = Math.max(padding, (canvas.clientHeight - bounds.height) / 2)
+
+  return {
+    baseHexSize,
+    originX,
+    originY,
+  }
 }
 
 function resizeCanvas(canvas: HTMLCanvasElement): void {
@@ -66,11 +104,9 @@ function drawTile(
   context: CanvasRenderingContext2D,
   tile: MapTile,
   hexSize: number,
-  offsetX: number,
-  offsetY: number,
   drawGrid: boolean,
 ): void {
-  const center = hexCenter(tile.row, tile.col, hexSize, offsetX, offsetY)
+  const center = hexCenter(tile.row, tile.col, hexSize)
   const points = hexPoints(center.x, center.y, hexSize)
 
   context.beginPath()
@@ -95,12 +131,10 @@ function hexCenter(
   row: number,
   col: number,
   hexSize: number,
-  offsetX: number,
-  offsetY: number,
 ): { x: number; y: number } {
   const width = Math.sqrt(3) * hexSize
-  const x = offsetX + width * (col + 0.5 * (row % 2)) + width / 2
-  const y = offsetY + hexSize * 1.5 * row + hexSize
+  const x = width * (col + 0.5 * (row % 2)) + width / 2
+  const y = hexSize * 1.5 * row + hexSize
 
   return { x, y }
 }
