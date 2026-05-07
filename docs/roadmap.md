@@ -12,7 +12,6 @@ Each stage should leave the project in a working state.
 
 Active cleanup/prep branch:
 
-```text
 prep/browser-mapgen-foundation
 
 The current branch is for preparing the project, documenting direction, and making the codebase easier to build from.
