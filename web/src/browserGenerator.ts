@@ -36,15 +36,18 @@ export function generateBrowserMap(
   seed: number,
   settings: GeneratorSettings = DEFAULT_GENERATOR_SETTINGS,
 ): HexMap {
-  const noiseLayers = buildElevationNoise(seed)
+  const landShapeLayers = buildLandShapeNoise(seed)
   const polarRandom = createSeededRandom(seed ^ 0x9e3779b9)
   const tiles = []
 
   for (let row = 0; row < ROWS; row += 1) {
     for (let col = 0; col < COLS; col += 1) {
-      const elevation = elevationAt(row, col, noiseLayers, settings)
-      const adjustedElevation = classifyTerrain(row, col, elevation, polarRandom)
-      const terrain = terrainFromValue(adjustedElevation, settings)
+      const landShapeValue = landShapeAt(row, col, landShapeLayers, settings)
+      const elevation = applySeaLevel(landShapeValue, settings)
+      const adjustedLandValue = applyEdgeOceanPressure(col, elevation)
+      const reliefValue = reliefAt(row, col, adjustedLandValue)
+      const adjustedElevation = applyPolarBands(row, reliefValue, polarRandom)
+      const terrain = terrainFromLandAndRelief(adjustedElevation, settings)
 
       tiles.push({
         row,
@@ -68,14 +71,14 @@ export function generateBrowserMap(
   }
 }
 
-function buildElevationNoise(seed: number): NoiseLayer[] {
+function buildLandShapeNoise(seed: number): NoiseLayer[] {
   return NOISE_OCTAVES.map((octaves, index) => ({
     octaves,
     seed: seed + index * 1013,
   }))
 }
 
-function elevationAt(
+function landShapeAt(
   row: number,
   col: number,
   noiseLayers: NoiseLayer[],
@@ -89,23 +92,18 @@ function elevationAt(
   )
   const continentMask = continentShape(x, y)
   const roughness = clamp(settings.roughness, 0.4, 1.8)
+
+  return layeredNoise * 0.52 * roughness + continentMask
+}
+
+function applySeaLevel(landShapeValue: number, settings: GeneratorSettings): number {
   const seaLevel = clamp(settings.seaLevel, -0.2, 0.2)
 
-  return layeredNoise * 0.52 * roughness + continentMask - seaLevel
+  return landShapeValue - seaLevel
 }
 
-function classifyTerrain(
-  row: number,
-  col: number,
-  elevation: number,
-  polarRandom: () => number,
-): number {
-  const oceanAdjustedElevation = applyOceanEdges(col, elevation)
-  return applyPolarBands(row, oceanAdjustedElevation, polarRandom)
-}
-
-function applyOceanEdges(col: number, elevation: number): number {
-  let value = elevation
+function applyEdgeOceanPressure(col: number, adjustedLandValue: number): number {
+  let value = adjustedLandValue
 
   if (col === 0 || col === COLS - 1) {
     if (value >= OCEAN) {
@@ -126,6 +124,11 @@ function applyOceanEdges(col: number, elevation: number): number {
   }
 
   return value
+}
+
+function reliefAt(_row: number, _col: number, adjustedLandValue: number): number {
+  // Temporary compatibility path: relief still follows adjusted land shape until a separate relief pass exists.
+  return adjustedLandValue
 }
 
 function applyPolarBands(row: number, elevation: number, random: () => number): number {
@@ -177,7 +180,7 @@ function applyPolarBands(row: number, elevation: number, random: () => number): 
   return elevation
 }
 
-function terrainFromValue(value: number, settings: GeneratorSettings): Terrain {
+function terrainFromLandAndRelief(value: number, settings: GeneratorSettings): Terrain {
   const mountainAmount = clamp(settings.mountainAmount, 0.5, 1.8)
   const highMountainThreshold = HIGH_MOUNTAIN / mountainAmount
   const mountainThreshold = MOUNTAIN / mountainAmount
