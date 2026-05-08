@@ -14,6 +14,10 @@ const OCEAN = -0.12
 
 const NOISE_OCTAVES = [3, 6, 12, 24, 48] as const
 const NOISE_WEIGHTS = [1, 0.5, 0.25, 0.125, 0.0625] as const
+const EDGE_OCEAN_PRESSURE_WIDTH = 8
+const EDGE_OCEAN_MAX_PRESSURE = 0.42
+const EDGE_OCEAN_NOISE_STRENGTH = 1.2
+const EDGE_OCEAN_BORDER_CAP = OCEAN - 0.04
 
 interface NoiseLayer {
   octaves: number
@@ -44,7 +48,7 @@ export function generateBrowserMap(
     for (let col = 0; col < COLS; col += 1) {
       const landShapeValue = landShapeAt(row, col, landShapeLayers, settings)
       const elevation = applySeaLevel(landShapeValue, settings)
-      const adjustedLandValue = applyEdgeOceanPressure(col, elevation)
+      const adjustedLandValue = applyEdgeOceanPressure(row, col, elevation, seed)
       const reliefValue = reliefAt(row, col, adjustedLandValue)
       const adjustedElevation = applyPolarBands(row, reliefValue, polarRandom)
       const terrain = terrainFromLandAndRelief(adjustedElevation, settings)
@@ -102,28 +106,44 @@ function applySeaLevel(landShapeValue: number, settings: GeneratorSettings): num
   return landShapeValue - seaLevel
 }
 
-function applyEdgeOceanPressure(col: number, adjustedLandValue: number): number {
-  let value = adjustedLandValue
+function applyEdgeOceanPressure(
+  row: number,
+  col: number,
+  adjustedLandValue: number,
+  seed: number,
+): number {
+  const pressure = edgeOceanPressure(row, col, seed)
 
-  if (col === 0 || col === COLS - 1) {
-    if (value >= OCEAN) {
-      value -= 0.4
-    }
-  } else if (col <= 1 || col >= COLS - 2) {
-    if (value >= OCEAN) {
-      value -= 0.2
-    }
-  } else if (col <= 2 || col >= COLS - 3) {
-    if (value >= PLAINS) {
-      value -= 0.1
-    }
-  } else if (col <= 5 || col >= COLS - 6) {
-    if (value >= PLAINS) {
-      value -= 0.05
-    }
+  if (pressure === 0) {
+    return adjustedLandValue
   }
 
-  return value
+  const pressuredValue = adjustedLandValue - pressure
+
+  if (col === 0 || col === COLS - 1) {
+    return Math.min(pressuredValue, EDGE_OCEAN_BORDER_CAP)
+  }
+
+  return pressuredValue
+}
+
+function edgeOceanPressure(row: number, col: number, seed: number): number {
+  const edgeDistance = Math.min(col, COLS - 1 - col)
+
+  if (edgeDistance >= EDGE_OCEAN_PRESSURE_WIDTH) {
+    return 0
+  }
+
+  if (edgeDistance === 0) {
+    return EDGE_OCEAN_MAX_PRESSURE
+  }
+
+  const edgeSide = col < COLS / 2 ? 0 : 1
+  const rowVariation = hashNoise(edgeSide, row, seed ^ 0x85ebca6b) * EDGE_OCEAN_NOISE_STRENGTH
+  const warpedDistance = edgeDistance + rowVariation
+  const edgeInfluence = clamp(1 - warpedDistance / EDGE_OCEAN_PRESSURE_WIDTH, 0, 1)
+
+  return EDGE_OCEAN_MAX_PRESSURE * smoothStep(edgeInfluence)
 }
 
 function reliefAt(_row: number, _col: number, adjustedLandValue: number): number {
