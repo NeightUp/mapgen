@@ -146,6 +146,14 @@ When a new idea comes up, ask:
 
 Good ideas should be recorded, but not all good ideas belong in V1.
 
+### 8. Land Shape Is Not Elevation
+
+Detailed generator shaping work is guided by `docs/land-shape-pipeline.md`.
+
+This high-level design document should stay broad: it defines the project direction, release target, core boundaries, and major design principles. The land-shape pipeline document is the focused implementation/design spec for landmass generation, including coastline shape, land/water separation, edge ocean pressure, continent separation, cleanup, and later relief work.
+
+The key generator principle for the next phase is that land shape is not elevation. The value that decides coastlines and landmasses should become separate from the later values that decide internal relief, hills, mountains, basins, rivers, and biomes.
+
 ## Current Prototype State
 
 The current project has two active prototype paths.

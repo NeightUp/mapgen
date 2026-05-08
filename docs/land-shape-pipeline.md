@@ -10,6 +10,8 @@ This plan focuses on land shape, continent separation, map edge behavior, and th
 
 It is not a full biome, river, resource, or game-simulation design. Those systems should build on top of the land-shape pipeline after the basic world structure is solid.
 
+This is the focused design spec for the next generator phase. Keep `docs/design.md` broad, keep `docs/roadmap.md` current for phase/status tracking, and update this document when implementation decisions change the land-shape pipeline.
+
 ---
 
 ## Current Situation
@@ -68,7 +70,7 @@ The generator’s land shapes are worth preserving. The fix is not to replace th
 
 ## Main Design Principle
 
-## Land shape is not elevation.
+### Land shape is not elevation.
 
 The generator should treat landmass creation and internal terrain detail as separate layers.
 

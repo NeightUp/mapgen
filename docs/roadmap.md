@@ -2,15 +2,13 @@
 
 ## Roadmap Purpose
 
-This roadmap exists to keep the project focused.
+This roadmap keeps the project focused while it moves from the Python/Pygame prototype toward a browser-based map generator.
 
-The goal is to move from the current Python/Pygame prototype toward a browser-based map generator without losing the working generator or drifting into full game development too early.
-
-Each stage should leave the project in a working state.
+Each stage should leave the project in a working state. The Python version is the preserved reference. The browser version is the release target.
 
 ## Current Status
 
-The project now has two working paths:
+The project has two working paths:
 
 - A preserved Python/Pygame prototype that generates maps, draws solid-color hexes, and exports map data as JSON to `exports/map_data.json`.
 - A browser prototype in `web/` using Vite, TypeScript, and HTML Canvas.
@@ -21,34 +19,42 @@ The browser prototype currently:
 - Renders hex maps on Canvas using solid terrain colors.
 - Supports pan, wheel zoom, zoom buttons, reset view, and resize-safe layout.
 - Supports grid toggling, terrain legend, metadata display, current-map JSON download, and visible-canvas PNG download.
-- Supports deterministic browser-side seed generation.
+- Supports seed input, random seed, Generate from Seed, and Load Sample JSON.
 - Includes generator controls for Sea Level, Mountain Amount, Roughness, and Reset Generator Settings.
 
-The browser generator is functional and structured after the Python generator, but it is not yet equivalent to the Python output. It still needs generator-quality work before the browser app should be considered a useful map generator rather than a capable prototype viewer.
+The browser generator is functional and structured after the Python generator, but it is not yet equivalent to the Python output. It still needs generator-quality work before the browser app should be considered a finished map generator.
+
+## Development Flow
+
+Use short-lived feature branches for focused work. Until `main` is updated with the browser-mapgen foundation, feature branches should usually branch from `prep/browser-mapgen-foundation`.
+
+Prefer branches named for the work being done, such as:
+
+- `feature/land-shape-pipeline`
+- `feature/generator-quality-pass`
+- `feature/continent-separation`
+- `feature/map-size-controls`
+
+Do not rely on roadmap text to identify the active temporary branch. Check Git directly when needed.
 
 ## Next Planned Work
 
-The next major work is generator quality and refinement, not basic browser setup.
+The immediate next coding focus is land-shape pipeline implementation and refinement, guided by `docs/land-shape-pipeline.md`.
 
 Near-term generator priorities:
 
-- Improve landmass variety and continent shapes.
-- Reduce coastal mountain-ring behavior.
-- Tune land/water and terrain distribution.
-- Improve elevation/noise behavior without adding unnecessary dependencies too early.
-- Add better settings feedback and eventually include generator settings in exported map data.
-- Begin moisture, temperature, and biome layers after elevation and terrain feel stable.
-- Add rivers and lakes later, after terrain/biome foundations are stronger.
+- Clarify and rename overloaded elevation concepts.
+- Separate land-shape value from relief/elevation.
+- Preserve the current coastline character.
+- Improve edge ocean pressure.
+- Add continent separation pressure.
+- Later add land cleanup and continent detection.
 
-## Current Branch
+The key design principle is: land shape is not elevation.
 
-Active branch:
+After land shape is more reliable, later generator work can move into separate internal relief, mountain ranges, basins, lakes, rivers, moisture, temperature, and biome layers.
 
-- feature/generator-settings-controls
-
-The current branch is focused on browser-side generator controls and documentation updates after the browser prototype work.
-
-## Phase 0 — Repository Cleanup
+## Phase 0 - Repository Cleanup
 
 Status: Complete
 
@@ -56,31 +62,31 @@ Goal: Make the repository clean enough to work from safely.
 
 Tasks:
 
-- Add .gitignore.
-- Stop tracking generated output files such as full_map.png.
+- Add `.gitignore`.
+- Stop tracking generated output files such as `full_map.png`.
 - Stop tracking Python cache files.
-- Add requirements.txt.
+- Add `requirements.txt`.
 - Update README so it matches the actual project state.
-- Add docs/design.md.
-- Add docs/roadmap.md.
+- Add `docs/design.md`.
+- Add `docs/roadmap.md`.
 - Preserve the current prototype as a known working baseline.
 
 Completion criteria:
 
-- git status is clean.
+- Git status is clean.
 - Generated map images are ignored.
 - Cache files are ignored.
 - The README is accurate.
 - Design and roadmap docs exist.
 - The current prototype still runs.
 
-## Phase 1 — Simplify Current Renderer
+## Phase 1 - Simplify Current Renderer
 
 Status: Complete
 
 Goal: Remove image tile dependency from the current prototype display path.
 
-The current code uses tile image assets. This helped the original prototype get working, but it creates extra complexity. For the next stage, the renderer should draw solid-color hexes directly in code.
+The renderer now draws solid-color hexes directly in code. Tile art can return later after the map data, geometry, zoom, pan, export, and browser pipeline are stable.
 
 Tasks:
 
@@ -89,7 +95,7 @@ Tasks:
 - Draw filled hex polygons instead of loading tile images.
 - Draw optional grid borders in code.
 - Keep the map visually similar enough to confirm generation still works.
-- Keep full_map.png generation if useful, but do not track the file in Git.
+- Keep `full_map.png` generation if useful, but do not track the file in Git.
 - Remove or isolate tile image loading from the main display path.
 
 Completion criteria:
@@ -100,11 +106,11 @@ Completion criteria:
 - Hex alignment is controlled by code.
 - The app still runs after the change.
 
-## Phase 2 — Separate Generator Data From Display
+## Phase 2 - Separate Generator Data From Display
 
 Status: Complete
 
-Goal: Make the generator output clean map data that can later be used by a browser renderer.
+Goal: Make the generator output clean map data that can be used by a browser renderer.
 
 Tasks:
 
@@ -117,6 +123,8 @@ Tasks:
 - Add a simple JSON output file for generated maps.
 
 Suggested early JSON shape:
+
+```json
 {
   "seed": 12345,
   "rows": 45,
@@ -130,6 +138,7 @@ Suggested early JSON shape:
     }
   ]
 }
+```
 
 Completion criteria:
 
@@ -138,7 +147,7 @@ Completion criteria:
 - Rendering reads from generated map data.
 - Pygame is no longer mixed into the generator data model.
 
-## Phase 3 — Browser Prototype Spike
+## Phase 3 - Browser Prototype Spike
 
 Status: Complete
 
@@ -180,36 +189,11 @@ Additional completed browser prototype work:
 - Seed input, random seed, generated browser maps, and Load Sample JSON.
 - Sea Level, Mountain Amount, Roughness, and Reset Generator Settings controls.
 
-## Phase 4 — Port or Rebuild Generator in TypeScript
+## Phase 4 - Port Or Rebuild Generator In TypeScript
 
 Status: In progress
 
-Goal: Move the generator into the browser app.
-
-There are two possible paths:
-
-### Option A — Port the Python generator to TypeScript
-
-Best if the current generator logic remains simple and valuable.
-
-Tasks:
-
-- Port terrain thresholds.
-- Port seeded randomness.
-- Port elevation/noise logic.
-- Match output shape to the JSON data model.
-
-### Option B — Rebuild the generator in TypeScript
-
-Best if the Python prototype is treated mostly as design reference.
-
-Tasks:
-
-- Recreate land/water generation.
-- Recreate polar bands.
-- Recreate terrain classification.
-- Add seed support from the beginning.
-- Tune results until they match or improve on the Python output.
+Goal: Move the generator into the browser app and improve generated map quality.
 
 Recommended path:
 
@@ -229,16 +213,23 @@ Known generator-quality gaps:
 - Coastal mountain-ring behavior needs reduction.
 - Terrain distribution needs tuning.
 - The browser generator does not yet match Python output.
+- Land shape and internal relief/elevation are still too tightly coupled.
 - Moisture, temperature, biome, lakes, and rivers are not implemented yet.
+
+Current detailed design guide:
+
+- `docs/land-shape-pipeline.md`
+- `docs/filemap.md` is the repo navigation aid for understanding current files and folders before planning structural changes.
 
 Completion criteria:
 
 - Browser app can generate maps without Python.
 - Same seed produces the same map.
 - Terrain distribution is acceptable.
+- Land shape is represented separately from internal relief/elevation.
 - Output is visible immediately in the Canvas renderer.
 
-## Phase 5 — Browser Controls
+## Phase 5 - Browser Controls
 
 Status: Partially complete
 
@@ -263,12 +254,14 @@ Completion criteria:
 - User can export an image. Complete for visible Canvas PNG.
 - User can export JSON. Complete for current map data.
 
-## Phase 6 — Better World Layers
+## Phase 6 - Better World Layers
 
 Goal: Improve the usefulness of generated maps.
 
 Tasks:
 
+- Add separate internal relief.
+- Add mountain range generation.
 - Add temperature layer.
 - Add moisture layer.
 - Add biome classification.
@@ -280,12 +273,12 @@ Tasks:
 
 Completion criteria:
 
-- Maps have more believable climate/biome variation.
+- Maps have more believable physical structure and climate/biome variation.
 - Lakes and rivers improve map readability.
 - Start-position scoring can identify reasonable player starts.
-- These systems are still data-driven and renderer-independent.
+- These systems are data-driven and renderer-independent.
 
-## Phase 7 — V1 Release Prep
+## Phase 7 - V1 Release Prep
 
 Goal: Prepare the project for a usable public release.
 
@@ -310,19 +303,25 @@ Completion criteria:
 - The project has clear known limitations.
 - V1 is ready for feedback.
 
+## Documentation Maintenance
+
+After meaningful changes, update the relevant docs before merging:
+
+- Update `README.md` if setup, commands, or project structure changes.
+- Update `docs/filemap.md` if files are added, removed, renamed, or significantly repurposed.
+- Update `docs/roadmap.md` if project status or next steps change.
+- Update `docs/design.md` if project direction or principles change.
+- Update focused design docs like `docs/land-shape-pipeline.md` if implementation decisions affect that system.
+
+Codex and other AI-assisted development should read `README.md`, `docs/design.md`, `docs/roadmap.md`, `docs/filemap.md`, and any relevant focused spec before editing code.
+
 ## Recommended Development Rules
 
-### Work in small branches
+### Work In Small Branches
 
-Use branches like:
+Use focused branches with clear names. Avoid mixing code, docs, generated files, and unrelated cleanup in the same change.
 
-- prep/browser-mapgen-foundation
-- feature/code-drawn-hexes
-- feature/json-export
-- feature/browser-prototype
-- feature/canvas-renderer
-
-### Keep main stable
+### Keep Main Stable
 
 Only merge when:
 
@@ -330,50 +329,52 @@ Only merge when:
 - Generated maps still display.
 - The change has a clear purpose.
 - The branch does not include accidental generated files.
+- Relevant docs are updated.
 
-### Do not commit generated files
+### Do Not Commit Generated Files
 
 Do not commit:
 
-- full_map.png
-- cache files
-- build folders
-- local environment files
-- temporary screenshots
+- `full_map.png`
+- `exports/`
+- Cache files
+- Build folders
+- Local environment files
+- Temporary screenshots
+- `node_modules/`
+- `web/dist/`
 
-### Avoid major rewrites without checkpoints
+The tracked sample map is `web/public/sample-map.json`.
 
-Large changes should be broken into steps. If a change takes the project from “working” to “broken,” it should be split smaller.
+### Avoid Major Rewrites Without Checkpoints
+
+Large changes should be broken into steps. If a change takes the project from working to broken, it should be split smaller.
 
 ## Near-Term Next Steps
 
 Immediate next steps:
 
-- Tune browser generator output quality.
-- Improve continent/landmass shapes and reduce coastal mountain clustering.
-- Review terrain distributions across several seeds.
-- Decide whether to keep improving the dependency-free noise path or add a small noise implementation later.
-- Add settings persistence or exported settings metadata if useful.
-- Begin moisture/temperature/biome layers once elevation and terrain are stable.
-- Keep Python prototype preserved as a reference.
+- Implement the first land-shape pipeline cleanup from `docs/land-shape-pipeline.md`.
+- Clarify current `elevation` usage and separate land-shape concepts from future relief concepts.
+- Preserve current coastline character while improving map-edge ocean behavior.
+- Add continent separation pressure.
+- Review terrain and land/water distributions across several seeds.
+- Add land cleanup and continent detection after the initial land/water split is stable.
+- Keep the Python prototype preserved as a reference.
 
 ## Long-Term Direction
 
 The long-term direction is:
-Python/Pygame prototype
-        ↓
-clean generator data model
-        ↓
-solid-color code-rendered hexes
-        ↓
-JSON export
-        ↓
-TypeScript browser prototype
-        ↓
-Canvas renderer
-        ↓
-browser-native generator
-        ↓
-public V1 map generator
 
-The Python version is the working seed. The browser version is the release target.
+```text
+Python/Pygame prototype
+  -> clean generator data model
+  -> solid-color code-rendered hexes
+  -> JSON export
+  -> TypeScript browser prototype
+  -> Canvas renderer
+  -> browser-native generator
+  -> land-shape pipeline
+  -> relief, water, climate, and biome layers
+  -> public V1 map generator
+```
