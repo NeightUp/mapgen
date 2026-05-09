@@ -65,9 +65,10 @@ export function generateBrowserMap(
       )
       const isLand = separatedLandValue >= PLAINS
       const reliefValue = isLand ? reliefAt(row, col, reliefLayers, settings) : separatedLandValue
-      const terrain = isLand
-        ? applyPolarLandBands(row, terrainFromRelief(reliefValue, settings), polarRandom)
+      const baseTerrain = isLand
+        ? terrainFromRelief(reliefValue, settings)
         : terrainFromWaterValue(separatedLandValue)
+      const terrain = applyPolarTerrainOverlay(row, baseTerrain, polarRandom)
       const adjustedElevation = adjustedDisplayValue(terrain, separatedLandValue, reliefValue)
 
       tiles.push({
@@ -243,7 +244,7 @@ function reliefAt(
   return layeredNoise * 0.32 + ridgeRelief - 0.03
 }
 
-function applyPolarLandBands(row: number, terrain: Terrain, random: () => number): Terrain {
+function applyPolarTerrainOverlay(row: number, terrain: Terrain, random: () => number): Terrain {
   if (row === 0 || row === ROWS - 1) {
     return 'ice'
   }
@@ -263,24 +264,31 @@ function applyPolarLandBands(row: number, terrain: Terrain, random: () => number
   }
 
   if (row === 3 || row === ROWS - 4) {
-    return 'tundra'
+    if (isLandTerrain(terrain)) {
+      return 'tundra'
+    }
+    return terrain
   }
 
   if (row === 4 || row === ROWS - 5) {
-    if (randomInt(random, 1, 5) !== 5) {
+    if (isLandTerrain(terrain) && randomInt(random, 1, 5) !== 5) {
       return 'tundra'
     }
     return terrain
   }
 
   if (row === 5 || row === ROWS - 6) {
-    if (randomInt(random, 1, 2) === 2) {
+    if (isLandTerrain(terrain) && randomInt(random, 1, 2) === 2) {
       return 'tundra'
     }
     return terrain
   }
 
   return terrain
+}
+
+function isLandTerrain(terrain: Terrain): boolean {
+  return terrain !== 'deep_ocean' && terrain !== 'ocean'
 }
 
 function terrainFromRelief(reliefValue: number, settings: GeneratorSettings): Terrain {
