@@ -59,7 +59,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <strong id="stats-water">Loading</strong>
     </article>
     <article>
-      <span>Edge Land</span>
+      <span>E/W Edge Land</span>
       <strong id="stats-edge-land">Loading</strong>
     </article>
     <article>
@@ -75,9 +75,20 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <section class="workspace" aria-label="Map browser prototype">
     <div class="canvas-panel">
       <canvas id="map-canvas" aria-label="Solid-color hex map prototype"></canvas>
-      <section class="terrain-legend" aria-label="Terrain legend">
-        <h3>Terrain</h3>
-        <ul id="terrain-legend"></ul>
+      <section id="terrain-legend-panel" class="terrain-legend" aria-label="Terrain legend">
+        <div class="terrain-legend-header">
+          <h3>Terrain</h3>
+          <button
+            id="terrain-legend-toggle"
+            class="terrain-legend-toggle"
+            type="button"
+            aria-expanded="true"
+            aria-controls="terrain-legend"
+          >
+            -
+          </button>
+        </div>
+        <ul id="terrain-legend" class="terrain-legend-body"></ul>
       </section>
     </div>
 
@@ -142,6 +153,9 @@ const statsLandBalance = document.querySelector<HTMLElement>('#stats-land-balanc
 const statsEdgeLand = document.querySelector<HTMLElement>('#stats-edge-land')!
 const statsEdgeLabel = document.querySelector<HTMLElement>('#stats-edge-label')!
 const gridToggle = document.querySelector<HTMLInputElement>('#grid-toggle')!
+const terrainLegendPanel = document.querySelector<HTMLElement>('#terrain-legend-panel')!
+const terrainLegendHeader = document.querySelector<HTMLElement>('.terrain-legend-header')!
+const terrainLegendToggle = document.querySelector<HTMLButtonElement>('#terrain-legend-toggle')!
 const terrainLegend = document.querySelector<HTMLUListElement>('#terrain-legend')!
 const seedInput = document.querySelector<HTMLInputElement>('#seed-input')!
 const seaLevelInput = document.querySelector<HTMLInputElement>('#sea-level')!
@@ -175,6 +189,11 @@ let isViewFitted = true
 let lastPointerX = 0
 let lastPointerY = 0
 let layoutFrame = 0
+let isTerrainLegendCollapsed = false
+let isTerrainLegendDragging = false
+let terrainLegendPointerId: number | null = null
+let terrainLegendDragOffsetX = 0
+let terrainLegendDragOffsetY = 0
 
 const draw = () => {
   renderHexMap(canvas, currentMap, {
@@ -211,7 +230,40 @@ function updateMapStats(map: HexMap): void {
   statsLandBalance.textContent = stats.landBalanceLabel
   statsEdgeLand.textContent = `${stats.edgeLandTiles} (${formatPercent(stats.edgeLandPercent)})`
   statsEdgeLabel.textContent = stats.edgeLandLabel
+  setStatusClass(statsLandBalance, statusClassForLandBalance(stats.landBalanceLabel))
+  setStatusClass(statsEdgeLabel, statusClassForEdgeLand(stats.edgeLandLabel))
   renderTerrainLegend(stats.terrainCounts)
+}
+
+type StatusClass = 'status-positive' | 'status-warning' | 'status-danger' | 'status-info'
+
+function setStatusClass(element: HTMLElement, statusClass: StatusClass): void {
+  element.classList.remove('status-positive', 'status-warning', 'status-danger', 'status-info')
+  element.classList.add(statusClass)
+}
+
+function statusClassForLandBalance(label: 'Low land' | 'Balanced' | 'High land'): StatusClass {
+  if (label === 'Balanced') {
+    return 'status-positive'
+  }
+
+  if (label === 'Low land') {
+    return 'status-info'
+  }
+
+  return 'status-danger'
+}
+
+function statusClassForEdgeLand(label: 'Clean' | 'Watch' | 'Heavy'): StatusClass {
+  if (label === 'Clean') {
+    return 'status-positive'
+  }
+
+  if (label === 'Watch') {
+    return 'status-warning'
+  }
+
+  return 'status-danger'
 }
 
 function formatPercent(value: number): string {
@@ -347,6 +399,54 @@ function scheduleSettledDraw(fitView: boolean): void {
   })
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+function setTerrainLegendPosition(left: number, top: number): void {
+  const panelRect = canvasPanel.getBoundingClientRect()
+  const legendRect = terrainLegendPanel.getBoundingClientRect()
+  const maxLeft = Math.max(0, panelRect.width - legendRect.width)
+  const maxTop = Math.max(0, panelRect.height - legendRect.height)
+
+  terrainLegendPanel.style.left = `${clamp(left, 0, maxLeft)}px`
+  terrainLegendPanel.style.top = `${clamp(top, 0, maxTop)}px`
+  terrainLegendPanel.style.bottom = 'auto'
+}
+
+function clampTerrainLegendPosition(): void {
+  const left = Number.parseFloat(terrainLegendPanel.style.left)
+  const top = Number.parseFloat(terrainLegendPanel.style.top)
+
+  if (Number.isNaN(left) || Number.isNaN(top)) {
+    return
+  }
+
+  setTerrainLegendPosition(left, top)
+}
+
+function toggleTerrainLegend(): void {
+  isTerrainLegendCollapsed = !isTerrainLegendCollapsed
+  terrainLegendPanel.classList.toggle('is-collapsed', isTerrainLegendCollapsed)
+  terrainLegendToggle.textContent = isTerrainLegendCollapsed ? '+' : '-'
+  terrainLegendToggle.setAttribute('aria-expanded', String(!isTerrainLegendCollapsed))
+  window.requestAnimationFrame(clampTerrainLegendPosition)
+}
+
+function stopTerrainLegendDrag(event: PointerEvent): void {
+  if (!isTerrainLegendDragging || event.pointerId !== terrainLegendPointerId) {
+    return
+  }
+
+  isTerrainLegendDragging = false
+  terrainLegendPointerId = null
+  terrainLegendPanel.classList.remove('is-dragging')
+
+  if (terrainLegendHeader.hasPointerCapture(event.pointerId)) {
+    terrainLegendHeader.releasePointerCapture(event.pointerId)
+  }
+}
+
 async function boot(): Promise<void> {
   try {
     await loadJsonSample()
@@ -355,6 +455,52 @@ async function boot(): Promise<void> {
     showStatus(`JSON sample failed to load; using TypeScript fallback sample. ${String(error)}`)
   }
 }
+
+terrainLegendPanel.addEventListener('pointerdown', (event) => {
+  event.stopPropagation()
+})
+
+terrainLegendHeader.addEventListener('pointerdown', (event) => {
+  const target = event.target as HTMLElement
+
+  if (target.closest('button')) {
+    return
+  }
+
+  event.preventDefault()
+  event.stopPropagation()
+
+  const panelRect = canvasPanel.getBoundingClientRect()
+  const legendRect = terrainLegendPanel.getBoundingClientRect()
+
+  isTerrainLegendDragging = true
+  terrainLegendPointerId = event.pointerId
+  terrainLegendDragOffsetX = event.clientX - legendRect.left
+  terrainLegendDragOffsetY = event.clientY - legendRect.top
+  terrainLegendPanel.classList.add('is-dragging')
+  terrainLegendHeader.setPointerCapture(event.pointerId)
+  setTerrainLegendPosition(legendRect.left - panelRect.left, legendRect.top - panelRect.top)
+})
+
+terrainLegendHeader.addEventListener('pointermove', (event) => {
+  if (!isTerrainLegendDragging || event.pointerId !== terrainLegendPointerId) {
+    return
+  }
+
+  event.preventDefault()
+  const panelRect = canvasPanel.getBoundingClientRect()
+  setTerrainLegendPosition(
+    event.clientX - panelRect.left - terrainLegendDragOffsetX,
+    event.clientY - panelRect.top - terrainLegendDragOffsetY,
+  )
+})
+
+terrainLegendHeader.addEventListener('pointerup', stopTerrainLegendDrag)
+terrainLegendHeader.addEventListener('pointercancel', stopTerrainLegendDrag)
+terrainLegendToggle.addEventListener('click', (event) => {
+  event.stopPropagation()
+  toggleTerrainLegend()
+})
 
 canvas.addEventListener('pointerdown', (event) => {
   isPanning = true
@@ -447,6 +593,7 @@ downloadPngButton.addEventListener('click', () => {
 })
 
 const resizeObserver = new ResizeObserver(() => {
+  clampTerrainLegendPosition()
   scheduleSettledDraw(isViewFitted)
 })
 resizeObserver.observe(canvasPanel)
