@@ -14,6 +14,8 @@ const OCEAN = -0.12
 
 const NOISE_OCTAVES = [3, 6, 12, 24, 48] as const
 const NOISE_WEIGHTS = [1, 0.5, 0.25, 0.125, 0.0625] as const
+const RELIEF_OCTAVES = [4, 9, 18, 36] as const
+const RELIEF_WEIGHTS = [1, 0.55, 0.28, 0.14] as const
 const EDGE_OCEAN_PRESSURE_WIDTH = 8
 const EDGE_OCEAN_MAX_PRESSURE = 0.42
 const EDGE_OCEAN_NOISE_STRENGTH = 1.2
@@ -46,6 +48,7 @@ export function generateBrowserMap(
   settings: GeneratorSettings = DEFAULT_GENERATOR_SETTINGS,
 ): HexMap {
   const landShapeLayers = buildLandShapeNoise(seed)
+  const reliefLayers = buildReliefNoise(seed)
   const polarRandom = createSeededRandom(seed ^ 0x9e3779b9)
   const tiles = []
 
@@ -60,15 +63,21 @@ export function generateBrowserMap(
         edgeAdjustedLandValue,
         seed,
       )
-      const reliefValue = reliefAt(row, col, separatedLandValue)
-      const adjustedElevation = applyPolarBands(row, reliefValue, polarRandom)
-      const terrain = terrainFromLandAndRelief(adjustedElevation, settings)
+      const isLand = separatedLandValue >= PLAINS
+      const reliefValue = isLand ? reliefAt(row, col, reliefLayers, settings) : separatedLandValue
+      const terrain = isLand
+        ? applyPolarLandBands(row, terrainFromRelief(reliefValue, settings), polarRandom)
+        : terrainFromWaterValue(separatedLandValue)
+      const adjustedElevation = adjustedDisplayValue(terrain, separatedLandValue, reliefValue)
 
       tiles.push({
         row,
         col,
         terrain,
+        // Compatibility field: this remains the sea-level-adjusted land-shape value until
+        // explicit land_shape_value and relief_value fields are added to the data model.
         elevation: seaLevelAdjustedValue,
+        // Compatibility field: this now tracks the final display/classification value.
         adjusted_elevation: adjustedElevation,
         moisture: 0,
         temperature: 0,
@@ -90,6 +99,13 @@ function buildLandShapeNoise(seed: number): NoiseLayer[] {
   return NOISE_OCTAVES.map((octaves, index) => ({
     octaves,
     seed: seed + index * 1013,
+  }))
+}
+
+function buildReliefNoise(seed: number): NoiseLayer[] {
+  return RELIEF_OCTAVES.map((octaves, index) => ({
+    octaves,
+    seed: seed + 0x51f15e + index * 1709,
   }))
 }
 
@@ -202,94 +218,113 @@ function edgeOceanPressure(row: number, col: number, seed: number): number {
   return EDGE_OCEAN_MAX_PRESSURE * smoothStep(edgeInfluence)
 }
 
-function reliefAt(_row: number, _col: number, adjustedLandValue: number): number {
-  // Temporary compatibility path: relief still follows adjusted land shape until a separate relief pass exists.
-  return adjustedLandValue
+function reliefAt(
+  row: number,
+  col: number,
+  reliefLayers: NoiseLayer[],
+  _settings: GeneratorSettings,
+): number {
+  const y = row / ROWS
+  const x = col / COLS
+  const weightTotal = RELIEF_WEIGHTS.reduce((total, weight) => total + weight, 0)
+  const layeredNoise =
+    reliefLayers.reduce(
+      (total, layer, index) => total + RELIEF_WEIGHTS[index] * valueNoise2d(x, y, layer),
+      0,
+    ) / weightTotal
+  const ridgeNoise = Math.abs(
+    valueNoise2d(x + 0.37, y - 0.19, {
+      octaves: 14,
+      seed: reliefLayers[0].seed ^ 0x6d2b79f5,
+    }),
+  )
+  const ridgeRelief = (1 - ridgeNoise) * 0.16
+
+  return layeredNoise * 0.32 + ridgeRelief - 0.03
 }
 
-function applyPolarBands(row: number, elevation: number, random: () => number): number {
+function applyPolarLandBands(row: number, terrain: Terrain, random: () => number): Terrain {
   if (row === 0 || row === ROWS - 1) {
-    return ICE
+    return 'ice'
   }
 
   if (row === 1 || row === ROWS - 2) {
     if (randomInt(random, 1, 5) !== 5) {
-      return ICE
+      return 'ice'
     }
-    if (elevation >= PLAINS) {
-      return TUNDRA
-    }
-    return elevation
+    return 'tundra'
   }
 
   if (row === 2 || row === ROWS - 3) {
     if (randomInt(random, 1, 4) !== 4) {
-      return ICE
+      return 'ice'
     }
-    if (elevation >= PLAINS) {
-      return TUNDRA
-    }
-    return elevation
+    return 'tundra'
   }
 
   if (row === 3 || row === ROWS - 4) {
-    if (elevation >= PLAINS) {
-      return TUNDRA
-    }
-    return elevation
+    return 'tundra'
   }
 
   if (row === 4 || row === ROWS - 5) {
-    if (elevation >= PLAINS && randomInt(random, 1, 5) !== 5) {
-      return TUNDRA
+    if (randomInt(random, 1, 5) !== 5) {
+      return 'tundra'
     }
-    return elevation
+    return terrain
   }
 
   if (row === 5 || row === ROWS - 6) {
-    if (elevation >= PLAINS && randomInt(random, 1, 2) === 2) {
-      return TUNDRA
+    if (randomInt(random, 1, 2) === 2) {
+      return 'tundra'
     }
-    return elevation
+    return terrain
   }
 
-  return elevation
+  return terrain
 }
 
-function terrainFromLandAndRelief(value: number, settings: GeneratorSettings): Terrain {
+function terrainFromRelief(reliefValue: number, settings: GeneratorSettings): Terrain {
   const mountainAmount = clamp(settings.mountainAmount, 0.5, 1.8)
   const highMountainThreshold = HIGH_MOUNTAIN / mountainAmount
   const mountainThreshold = MOUNTAIN / mountainAmount
 
-  if (value === ICE) {
-    return 'ice'
-  }
-
-  if (value === TUNDRA) {
-    return 'tundra'
-  }
-
-  if (value >= highMountainThreshold) {
+  if (reliefValue >= highMountainThreshold) {
     return 'high_mountain'
   }
 
-  if (value >= mountainThreshold) {
+  if (reliefValue >= mountainThreshold) {
     return 'mountain'
   }
 
-  if (value >= HILLS) {
+  if (reliefValue >= HILLS) {
     return 'hills'
   }
 
-  if (value >= PLAINS) {
-    return 'plains'
-  }
+  return 'plains'
+}
 
-  if (value >= OCEAN) {
+function terrainFromWaterValue(landValue: number): Terrain {
+  if (landValue >= OCEAN) {
     return 'ocean'
   }
 
   return 'deep_ocean'
+}
+
+function adjustedDisplayValue(terrain: Terrain, landValue: number, reliefValue: number): number {
+  if (terrain === 'ice') {
+    return ICE
+  }
+
+  if (terrain === 'tundra') {
+    return TUNDRA
+  }
+
+  if (terrain === 'deep_ocean' || terrain === 'ocean') {
+    return landValue
+  }
+
+  return reliefValue
 }
 
 function continentShape(x: number, y: number): number {

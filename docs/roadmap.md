@@ -207,6 +207,7 @@ Current state:
 - It uses dependency-free deterministic value noise instead of Python Perlin noise.
 - It exposes basic generation settings through the browser UI.
 - It includes an initial soft continent separation pressure pass that still needs tuning and review.
+- It includes a first proof pass where land/water classification is separated from land terrain relief.
 
 Known generator-quality gaps:
 
@@ -214,7 +215,7 @@ Known generator-quality gaps:
 - Coastal mountain-ring behavior needs reduction.
 - Terrain distribution needs tuning.
 - The browser generator does not yet match Python output.
-- Land shape and internal relief/elevation are still too tightly coupled.
+- The separate relief proof still needs tuning and is not yet final topology.
 - Moisture, temperature, biome, lakes, and rivers are not implemented yet.
 
 Current detailed design guide:

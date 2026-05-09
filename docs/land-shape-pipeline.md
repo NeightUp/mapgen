@@ -466,6 +466,12 @@ This would allow a continent to have:
 
 This solves the current problem where mountains are too directly tied to the land-shape value.
 
+Implementation note: the browser generator now has a first proof pass for
+separate relief. The shaped land value still decides deep ocean, ocean, and land,
+while a separate seeded relief noise field classifies land tiles as plains,
+hills, mountains, or high mountains. This is not final topology, mountain range
+generation, lakes, rivers, cleanup, continent detection, or biome work.
+
 ---
 
 ## Mountain Ranges
