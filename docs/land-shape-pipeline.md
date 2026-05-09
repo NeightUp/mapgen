@@ -367,8 +367,10 @@ This is likely one of the most important future customization controls.
 Implementation note: the browser generator now has an initial soft, seed-driven
 continent separation pressure pass. It subtracts modestly from the adjusted land
 value near an organically warped middle zone to encourage occasional channels and
-straits. This is not continent detection, cleanup, or a complete continent
-system; those remain future work.
+straits. Inside the separation influence, it also applies local land-mask
+compression so very high land values are more carveable without globally
+normalizing terrain output. This is not continent detection, cleanup, or a
+complete continent system; those remain future work.
 
 ---
 

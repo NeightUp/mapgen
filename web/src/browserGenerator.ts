@@ -18,15 +18,22 @@ const EDGE_OCEAN_PRESSURE_WIDTH = 8
 const EDGE_OCEAN_MAX_PRESSURE = 0.42
 const EDGE_OCEAN_NOISE_STRENGTH = 1.2
 const EDGE_OCEAN_BORDER_CAP = OCEAN - 0.04
-const CONTINENT_SEPARATION_MAX_PRESSURE = 0.11
+const CONTINENT_SEPARATION_MAX_PRESSURE = 0.16
 const CONTINENT_SEPARATION_BASE_WIDTH = 0.095
 const CONTINENT_SEPARATION_WIDTH_VARIATION = 0.025
 const CONTINENT_SEPARATION_WARP_STRENGTH = 0.055
 const CONTINENT_SEPARATION_DETAIL_STRENGTH = 0.18
+const CONTINENT_SEPARATION_COMPRESSION_CAP = 0.1
+const CONTINENT_SEPARATION_COMPRESSION_STRENGTH = 0.82
 
 interface NoiseLayer {
   octaves: number
   seed: number
+}
+
+interface ContinentSeparationPressure {
+  influence: number
+  pressure: number
 }
 
 export interface GeneratorSettings {
@@ -145,10 +152,35 @@ function applyContinentSeparationPressure(
   seed: number,
 ): number {
   // First-pass land-shape pressure only; continent detection and cleanup remain later passes.
-  return adjustedLandValue - continentSeparationPressure(row, col, seed)
+  const separationPressure = continentSeparationPressure(row, col, seed)
+
+  if (separationPressure.influence === 0) {
+    return adjustedLandValue
+  }
+
+  const compressedLandValue = compressLandMaskForSeparation(
+    adjustedLandValue,
+    separationPressure.influence,
+  )
+
+  return compressedLandValue - separationPressure.pressure
 }
 
-function continentSeparationPressure(row: number, col: number, seed: number): number {
+function compressLandMaskForSeparation(adjustedLandValue: number, influence: number): number {
+  if (adjustedLandValue <= CONTINENT_SEPARATION_COMPRESSION_CAP) {
+    return adjustedLandValue
+  }
+
+  const compressionAmount = smoothStep(influence) * CONTINENT_SEPARATION_COMPRESSION_STRENGTH
+
+  return lerp(adjustedLandValue, CONTINENT_SEPARATION_COMPRESSION_CAP, compressionAmount)
+}
+
+function continentSeparationPressure(
+  row: number,
+  col: number,
+  seed: number,
+): ContinentSeparationPressure {
   const x = col / (COLS - 1)
   const y = row / (ROWS - 1)
   const warpLayer = { octaves: 3, seed: seed ^ 0x27d4eb2d }
@@ -163,7 +195,10 @@ function continentSeparationPressure(row: number, col: number, seed: number): nu
   const distanceFromCenter = Math.abs(x - centerline)
 
   if (distanceFromCenter >= width) {
-    return 0
+    return {
+      influence: 0,
+      pressure: 0,
+    }
   }
 
   const influence = smoothStep(1 - distanceFromCenter / width)
@@ -174,7 +209,10 @@ function continentSeparationPressure(row: number, col: number, seed: number): nu
     1.15,
   )
 
-  return CONTINENT_SEPARATION_MAX_PRESSURE * influence * detailVariation
+  return {
+    influence,
+    pressure: CONTINENT_SEPARATION_MAX_PRESSURE * influence * detailVariation,
+  }
 }
 
 function edgeOceanPressure(row: number, col: number, seed: number): number {
