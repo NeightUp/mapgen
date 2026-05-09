@@ -18,6 +18,11 @@ const EDGE_OCEAN_PRESSURE_WIDTH = 8
 const EDGE_OCEAN_MAX_PRESSURE = 0.42
 const EDGE_OCEAN_NOISE_STRENGTH = 1.2
 const EDGE_OCEAN_BORDER_CAP = OCEAN - 0.04
+const CONTINENT_SEPARATION_MAX_PRESSURE = 0.11
+const CONTINENT_SEPARATION_BASE_WIDTH = 0.095
+const CONTINENT_SEPARATION_WIDTH_VARIATION = 0.025
+const CONTINENT_SEPARATION_WARP_STRENGTH = 0.055
+const CONTINENT_SEPARATION_DETAIL_STRENGTH = 0.18
 
 interface NoiseLayer {
   octaves: number
@@ -47,9 +52,15 @@ export function generateBrowserMap(
   for (let row = 0; row < ROWS; row += 1) {
     for (let col = 0; col < COLS; col += 1) {
       const landShapeValue = landShapeAt(row, col, landShapeLayers, settings)
-      const elevation = applySeaLevel(landShapeValue, settings)
-      const adjustedLandValue = applyEdgeOceanPressure(row, col, elevation, seed)
-      const reliefValue = reliefAt(row, col, adjustedLandValue)
+      const seaLevelAdjustedValue = applySeaLevel(landShapeValue, settings)
+      const edgeAdjustedLandValue = applyEdgeOceanPressure(row, col, seaLevelAdjustedValue, seed)
+      const separatedLandValue = applyContinentSeparationPressure(
+        row,
+        col,
+        edgeAdjustedLandValue,
+        seed,
+      )
+      const reliefValue = reliefAt(row, col, separatedLandValue)
       const adjustedElevation = applyPolarBands(row, reliefValue, polarRandom)
       const terrain = terrainFromLandAndRelief(adjustedElevation, settings)
 
@@ -57,7 +68,7 @@ export function generateBrowserMap(
         row,
         col,
         terrain,
-        elevation,
+        elevation: seaLevelAdjustedValue,
         adjusted_elevation: adjustedElevation,
         moisture: 0,
         temperature: 0,
@@ -125,6 +136,45 @@ function applyEdgeOceanPressure(
   }
 
   return pressuredValue
+}
+
+function applyContinentSeparationPressure(
+  row: number,
+  col: number,
+  adjustedLandValue: number,
+  seed: number,
+): number {
+  // First-pass land-shape pressure only; continent detection and cleanup remain later passes.
+  return adjustedLandValue - continentSeparationPressure(row, col, seed)
+}
+
+function continentSeparationPressure(row: number, col: number, seed: number): number {
+  const x = col / (COLS - 1)
+  const y = row / (ROWS - 1)
+  const warpLayer = { octaves: 3, seed: seed ^ 0x27d4eb2d }
+  const widthLayer = { octaves: 4, seed: seed ^ 0x165667b1 }
+  const detailLayer = { octaves: 9, seed: seed ^ 0xd3a2646c }
+  const centerlineWarp = valueNoise2d(0.41, y, warpLayer) * CONTINENT_SEPARATION_WARP_STRENGTH
+  const centerline = 0.5 + centerlineWarp
+  const widthNoise = (valueNoise2d(0.73, y, widthLayer) + 1) / 2
+  const width =
+    CONTINENT_SEPARATION_BASE_WIDTH +
+    (widthNoise - 0.5) * 2 * CONTINENT_SEPARATION_WIDTH_VARIATION
+  const distanceFromCenter = Math.abs(x - centerline)
+
+  if (distanceFromCenter >= width) {
+    return 0
+  }
+
+  const influence = smoothStep(1 - distanceFromCenter / width)
+  const detailNoise = valueNoise2d(x, y, detailLayer)
+  const detailVariation = clamp(
+    1 + detailNoise * CONTINENT_SEPARATION_DETAIL_STRENGTH,
+    0.7,
+    1.15,
+  )
+
+  return CONTINENT_SEPARATION_MAX_PRESSURE * influence * detailVariation
 }
 
 function edgeOceanPressure(row: number, col: number, seed: number): number {
