@@ -6,16 +6,20 @@ const COLS = 85
 
 const ICE = 1
 const TUNDRA = 2
-const HIGH_MOUNTAIN = 0.45
-const MOUNTAIN = 0.3
-const HILLS = 0.1
 const PLAINS = -0.05
 const OCEAN = -0.12
 
 const NOISE_OCTAVES = [3, 6, 12, 24, 48] as const
 const NOISE_WEIGHTS = [1, 0.5, 0.25, 0.125, 0.0625] as const
-const RELIEF_OCTAVES = [4, 9, 18, 36] as const
-const RELIEF_WEIGHTS = [1, 0.55, 0.28, 0.14] as const
+const RELIEF_OCTAVES = [2, 5, 11, 22] as const
+const RELIEF_WEIGHTS = [1, 0.65, 0.32, 0.12] as const
+const RELIEF_BASE_SCALE = 0.4
+const RELIEF_RIDGE_OCTAVES = 10
+const RELIEF_RIDGE_STRENGTH = 0.24
+const RELIEF_VALUE_OFFSET = -0.015
+const RELIEF_HILLS_THRESHOLD = 0.04
+const RELIEF_MOUNTAIN_THRESHOLD = 0.23
+const RELIEF_HIGH_MOUNTAIN_THRESHOLD = 0.39
 const EDGE_OCEAN_PRESSURE_WIDTH = 8
 const EDGE_OCEAN_MAX_PRESSURE = 0.42
 const EDGE_OCEAN_NOISE_STRENGTH = 1.2
@@ -235,13 +239,13 @@ function reliefAt(
     ) / weightTotal
   const ridgeNoise = Math.abs(
     valueNoise2d(x + 0.37, y - 0.19, {
-      octaves: 14,
+      octaves: RELIEF_RIDGE_OCTAVES,
       seed: reliefLayers[0].seed ^ 0x6d2b79f5,
     }),
   )
-  const ridgeRelief = (1 - ridgeNoise) * 0.16
+  const ridgeRelief = (1 - ridgeNoise) * RELIEF_RIDGE_STRENGTH
 
-  return layeredNoise * 0.32 + ridgeRelief - 0.03
+  return layeredNoise * RELIEF_BASE_SCALE + ridgeRelief + RELIEF_VALUE_OFFSET
 }
 
 function applyPolarTerrainOverlay(row: number, terrain: Terrain, random: () => number): Terrain {
@@ -326,8 +330,8 @@ function isLandTerrain(terrain: Terrain): boolean {
 
 function terrainFromRelief(reliefValue: number, settings: GeneratorSettings): Terrain {
   const mountainAmount = clamp(settings.mountainAmount, 0.5, 1.8)
-  const highMountainThreshold = HIGH_MOUNTAIN / mountainAmount
-  const mountainThreshold = MOUNTAIN / mountainAmount
+  const highMountainThreshold = RELIEF_HIGH_MOUNTAIN_THRESHOLD / mountainAmount
+  const mountainThreshold = RELIEF_MOUNTAIN_THRESHOLD / mountainAmount
 
   if (reliefValue >= highMountainThreshold) {
     return 'high_mountain'
@@ -337,7 +341,7 @@ function terrainFromRelief(reliefValue: number, settings: GeneratorSettings): Te
     return 'mountain'
   }
 
-  if (reliefValue >= HILLS) {
+  if (reliefValue >= RELIEF_HILLS_THRESHOLD) {
     return 'hills'
   }
 
