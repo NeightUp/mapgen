@@ -18,22 +18,15 @@ const EDGE_OCEAN_PRESSURE_WIDTH = 8
 const EDGE_OCEAN_MAX_PRESSURE = 0.42
 const EDGE_OCEAN_NOISE_STRENGTH = 1.2
 const EDGE_OCEAN_BORDER_CAP = OCEAN - 0.04
-const CONTINENT_SEPARATION_MAX_PRESSURE = 0.16
+const CONTINENT_SEPARATION_MAX_PRESSURE = 0.09
 const CONTINENT_SEPARATION_BASE_WIDTH = 0.095
 const CONTINENT_SEPARATION_WIDTH_VARIATION = 0.025
 const CONTINENT_SEPARATION_WARP_STRENGTH = 0.055
 const CONTINENT_SEPARATION_DETAIL_STRENGTH = 0.18
-const CONTINENT_SEPARATION_COMPRESSION_CAP = 0.1
-const CONTINENT_SEPARATION_COMPRESSION_STRENGTH = 0.82
 
 interface NoiseLayer {
   octaves: number
   seed: number
-}
-
-interface ContinentSeparationPressure {
-  influence: number
-  pressure: number
 }
 
 export interface GeneratorSettings {
@@ -152,35 +145,16 @@ function applyContinentSeparationPressure(
   seed: number,
 ): number {
   // First-pass land-shape pressure only; continent detection and cleanup remain later passes.
-  const separationPressure = continentSeparationPressure(row, col, seed)
+  const pressure = continentSeparationPressure(row, col, seed)
 
-  if (separationPressure.influence === 0) {
+  if (pressure === 0) {
     return adjustedLandValue
   }
 
-  const compressedLandValue = compressLandMaskForSeparation(
-    adjustedLandValue,
-    separationPressure.influence,
-  )
-
-  return compressedLandValue - separationPressure.pressure
+  return adjustedLandValue - pressure
 }
 
-function compressLandMaskForSeparation(adjustedLandValue: number, influence: number): number {
-  if (adjustedLandValue <= CONTINENT_SEPARATION_COMPRESSION_CAP) {
-    return adjustedLandValue
-  }
-
-  const compressionAmount = smoothStep(influence) * CONTINENT_SEPARATION_COMPRESSION_STRENGTH
-
-  return lerp(adjustedLandValue, CONTINENT_SEPARATION_COMPRESSION_CAP, compressionAmount)
-}
-
-function continentSeparationPressure(
-  row: number,
-  col: number,
-  seed: number,
-): ContinentSeparationPressure {
+function continentSeparationPressure(row: number, col: number, seed: number): number {
   const x = col / (COLS - 1)
   const y = row / (ROWS - 1)
   const warpLayer = { octaves: 3, seed: seed ^ 0x27d4eb2d }
@@ -195,10 +169,7 @@ function continentSeparationPressure(
   const distanceFromCenter = Math.abs(x - centerline)
 
   if (distanceFromCenter >= width) {
-    return {
-      influence: 0,
-      pressure: 0,
-    }
+    return 0
   }
 
   const influence = smoothStep(1 - distanceFromCenter / width)
@@ -209,10 +180,7 @@ function continentSeparationPressure(
     1.15,
   )
 
-  return {
-    influence,
-    pressure: CONTINENT_SEPARATION_MAX_PRESSURE * influence * detailVariation,
-  }
+  return CONTINENT_SEPARATION_MAX_PRESSURE * influence * detailVariation
 }
 
 function edgeOceanPressure(row: number, col: number, seed: number): number {
@@ -325,20 +293,33 @@ function terrainFromLandAndRelief(value: number, settings: GeneratorSettings): T
 }
 
 function continentShape(x: number, y: number): number {
-  const westMass = radialFalloff(x, y, 0.28, 0.48, 0.3, 0.5)
-  const eastMass = radialFalloff(x, y, 0.67, 0.5, 0.24, 0.42)
+  const westMass = radialFalloff(x, y, 0.25, 0.48, 0.31, 0.5)
+  const eastMass = radialFalloff(x, y, 0.72, 0.5, 0.27, 0.42)
   const secondaryIslands = secondaryIslandShape(x, y)
+  const separationValley = broadSeparationValley(x, y)
   const polarOcean = Math.abs(y - 0.5) * 0.18
 
-  return Math.max(westMass, eastMass, secondaryIslands) - 0.42 - polarOcean
+  return Math.max(westMass, eastMass, secondaryIslands) - separationValley - 0.42 - polarOcean
 }
 
 function secondaryIslandShape(x: number, y: number): number {
-  const northIslandArc = radialFalloff(x, y, 0.45, 0.26, 0.1, 0.17)
-  const southIslandArc = radialFalloff(x, y, 0.56, 0.72, 0.11, 0.18)
-  const centralIslets = radialFalloff(x, y, 0.51, 0.5, 0.07, 0.12)
+  const northIslandArc = radialFalloff(x, y, 0.44, 0.25, 0.1, 0.17)
+  const southIslandArc = radialFalloff(x, y, 0.57, 0.73, 0.11, 0.18)
+  const offsetIslets = Math.max(
+    radialFalloff(x, y, 0.46, 0.42, 0.06, 0.1),
+    radialFalloff(x, y, 0.55, 0.58, 0.06, 0.1),
+  )
 
-  return Math.max(northIslandArc, southIslandArc, centralIslets) * 0.55
+  return Math.max(northIslandArc, southIslandArc, offsetIslets) * 0.42
+}
+
+function broadSeparationValley(x: number, y: number): number {
+  const centerline = 0.5 + Math.sin((y - 0.08) * Math.PI * 2) * 0.035
+  const width = 0.13 + Math.cos(y * Math.PI * 2) * 0.015
+  const distanceFromCenter = Math.abs(x - centerline)
+  const influence = clamp(1 - distanceFromCenter / width, 0, 1)
+
+  return smoothStep(influence) * 0.045
 }
 
 function radialFalloff(

@@ -364,15 +364,13 @@ Behavior:
 
 This is likely one of the most important future customization controls.
 
-Implementation note: the browser generator now has an initial soft, seed-driven
-continent separation pressure pass. It subtracts modestly from the adjusted land
-value near an organically warped middle zone to encourage occasional channels and
-straits. Inside the separation influence, it also applies local land-mask
-compression so very high land values are more carveable without globally
-normalizing terrain output. The broad continent mask has also been adjusted so
-middle island support is weaker and offset rather than a strong centered bridge.
-This is not continent detection, cleanup, or a complete continent system; those
-remain future work.
+Implementation note: the first pressure-only approach was too subtractive and
+could dent landmasses instead of producing natural separation. The browser
+generator now makes the broad continent mask more separation-aware with less
+overlap between major land supports, weaker offset middle islands, and a subtle
+curved separation valley. Continent separation pressure remains as a mild
+assistive pass for weak bridges. This is not continent detection, cleanup, or a
+complete continent system; those remain future work.
 
 ---
 
