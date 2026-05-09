@@ -369,8 +369,10 @@ continent separation pressure pass. It subtracts modestly from the adjusted land
 value near an organically warped middle zone to encourage occasional channels and
 straits. Inside the separation influence, it also applies local land-mask
 compression so very high land values are more carveable without globally
-normalizing terrain output. This is not continent detection, cleanup, or a
-complete continent system; those remain future work.
+normalizing terrain output. The broad continent mask has also been adjusted so
+middle island support is weaker and offset rather than a strong centered bridge.
+This is not continent detection, cleanup, or a complete continent system; those
+remain future work.
 
 ---
 

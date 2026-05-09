@@ -325,12 +325,20 @@ function terrainFromLandAndRelief(value: number, settings: GeneratorSettings): T
 }
 
 function continentShape(x: number, y: number): number {
-  const westMass = radialFalloff(x, y, 0.28, 0.48, 0.33, 0.5)
-  const eastMass = radialFalloff(x, y, 0.67, 0.5, 0.27, 0.42)
-  const islandArc = radialFalloff(x, y, 0.5, 0.32, 0.16, 0.25)
+  const westMass = radialFalloff(x, y, 0.28, 0.48, 0.3, 0.5)
+  const eastMass = radialFalloff(x, y, 0.67, 0.5, 0.24, 0.42)
+  const secondaryIslands = secondaryIslandShape(x, y)
   const polarOcean = Math.abs(y - 0.5) * 0.18
 
-  return Math.max(westMass, eastMass, islandArc) - 0.42 - polarOcean
+  return Math.max(westMass, eastMass, secondaryIslands) - 0.42 - polarOcean
+}
+
+function secondaryIslandShape(x: number, y: number): number {
+  const northIslandArc = radialFalloff(x, y, 0.45, 0.26, 0.1, 0.17)
+  const southIslandArc = radialFalloff(x, y, 0.56, 0.72, 0.11, 0.18)
+  const centralIslets = radialFalloff(x, y, 0.51, 0.5, 0.07, 0.12)
+
+  return Math.max(northIslandArc, southIslandArc, centralIslets) * 0.55
 }
 
 function radialFalloff(
