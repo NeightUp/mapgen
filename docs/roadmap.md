@@ -47,7 +47,7 @@ Near-term generator priorities:
 - Separate land-shape value from relief/elevation.
 - Preserve the current coastline character.
 - Improve edge ocean pressure.
-- Add continent separation pressure.
+- Tune and review the initial continent separation pressure pass.
 - Later add land cleanup and continent detection.
 
 The key design principle is: land shape is not elevation.
@@ -206,6 +206,7 @@ Current state:
 - It mirrors the Python helper flow for elevation, ocean edges, polar bands, and terrain classification.
 - It uses dependency-free deterministic value noise instead of Python Perlin noise.
 - It exposes basic generation settings through the browser UI.
+- It includes an initial soft continent separation pressure pass that still needs tuning and review.
 
 Known generator-quality gaps:
 
@@ -357,7 +358,7 @@ Immediate next steps:
 - Implement the first land-shape pipeline cleanup from `docs/land-shape-pipeline.md`.
 - Clarify current `elevation` usage and separate land-shape concepts from future relief concepts.
 - Preserve current coastline character while improving map-edge ocean behavior.
-- Add continent separation pressure.
+- Tune and review the initial continent separation pressure pass.
 - Review terrain and land/water distributions across several seeds.
 - Add land cleanup and continent detection after the initial land/water split is stable.
 - Keep the Python prototype preserved as a reference.

@@ -364,6 +364,12 @@ Behavior:
 
 This is likely one of the most important future customization controls.
 
+Implementation note: the browser generator now has an initial soft, seed-driven
+continent separation pressure pass. It subtracts modestly from the adjusted land
+value near an organically warped middle zone to encourage occasional channels and
+straits. This is not continent detection, cleanup, or a complete continent
+system; those remain future work.
+
 ---
 
 ### 6. Classify Land/Water

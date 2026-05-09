@@ -21,7 +21,7 @@ export interface MapStats {
   edgeLandTiles: number
   edgeLandPercent: number
   terrainCounts: Record<Terrain, number>
-  landBalanceLabel: 'Low land' | 'Balanced' | 'High land'
+  landBalanceLabel: 'Too low' | 'Low land' | 'Balanced' | 'High land'
   edgeLandLabel: 'Clean' | 'Watch' | 'Heavy'
 }
 
@@ -84,7 +84,11 @@ function percent(count: number, total: number): number {
 }
 
 function landBalanceLabel(landPercent: number): MapStats['landBalanceLabel'] {
-  if (landPercent < 25) {
+  if (landPercent < 35) {
+    return 'Too low'
+  }
+
+  if (landPercent < 45) {
     return 'Low land'
   }
 

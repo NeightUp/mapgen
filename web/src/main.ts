@@ -242,13 +242,15 @@ function setStatusClass(element: HTMLElement, statusClass: StatusClass): void {
   element.classList.add(statusClass)
 }
 
-function statusClassForLandBalance(label: 'Low land' | 'Balanced' | 'High land'): StatusClass {
+function statusClassForLandBalance(
+  label: 'Too low' | 'Low land' | 'Balanced' | 'High land',
+): StatusClass {
   if (label === 'Balanced') {
     return 'status-positive'
   }
 
   if (label === 'Low land') {
-    return 'status-info'
+    return 'status-warning'
   }
 
   return 'status-danger'
