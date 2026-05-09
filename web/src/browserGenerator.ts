@@ -245,46 +245,79 @@ function reliefAt(
 }
 
 function applyPolarTerrainOverlay(row: number, terrain: Terrain, random: () => number): Terrain {
-  if (row === 0 || row === ROWS - 1) {
+  const polarDistance = Math.min(row, ROWS - 1 - row)
+
+  // Temporary display/classification overlay until climate and biome layers exist.
+  // Ice can overlay water at the poles, but tundra should only overlay land terrain.
+  if (polarDistance === 0) {
     return 'ice'
   }
 
-  if (row === 1 || row === ROWS - 2) {
-    if (randomInt(random, 1, 5) !== 5) {
-      return 'ice'
-    }
+  if (rollChance(random, iceChanceForPolarDistance(polarDistance))) {
+    return 'ice'
+  }
+
+  if (!isLandTerrain(terrain)) {
+    return terrain
+  }
+
+  if (rollChance(random, tundraChanceForPolarDistance(polarDistance))) {
     return 'tundra'
-  }
-
-  if (row === 2 || row === ROWS - 3) {
-    if (randomInt(random, 1, 4) !== 4) {
-      return 'ice'
-    }
-    return 'tundra'
-  }
-
-  if (row === 3 || row === ROWS - 4) {
-    if (isLandTerrain(terrain)) {
-      return 'tundra'
-    }
-    return terrain
-  }
-
-  if (row === 4 || row === ROWS - 5) {
-    if (isLandTerrain(terrain) && randomInt(random, 1, 5) !== 5) {
-      return 'tundra'
-    }
-    return terrain
-  }
-
-  if (row === 5 || row === ROWS - 6) {
-    if (isLandTerrain(terrain) && randomInt(random, 1, 2) === 2) {
-      return 'tundra'
-    }
-    return terrain
   }
 
   return terrain
+}
+
+function iceChanceForPolarDistance(polarDistance: number): number {
+  if (polarDistance === 1) {
+    return 0.8
+  }
+
+  if (polarDistance === 2) {
+    return 0.6
+  }
+
+  if (polarDistance === 3) {
+    return 0.2
+  }
+
+  if (polarDistance === 4) {
+    return 0.05
+  }
+
+  return 0
+}
+
+function tundraChanceForPolarDistance(polarDistance: number): number {
+  if (polarDistance <= 4) {
+    return 1
+  }
+
+  if (polarDistance === 5) {
+    return 0.8
+  }
+
+  if (polarDistance === 6) {
+    return 0.6
+  }
+
+  if (polarDistance === 7) {
+    return 0.4
+  }
+
+  if (polarDistance === 8) {
+    return 0.2
+  }
+
+  if (polarDistance === 9) {
+    return 0.1
+  }
+
+  return 0
+}
+
+function rollChance(random: () => number, chance: number): boolean {
+  return chance > 0 && random() < chance
 }
 
 function isLandTerrain(terrain: Terrain): boolean {
@@ -408,10 +441,6 @@ function smoothStep(value: number): number {
 
 function lerp(a: number, b: number, amount: number): number {
   return a + (b - a) * amount
-}
-
-function randomInt(random: () => number, min: number, max: number): number {
-  return Math.floor(random() * (max - min + 1)) + min
 }
 
 function clamp(value: number, min: number, max: number): number {
