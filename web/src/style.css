@@ -55,7 +55,7 @@ button {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   padding: 24px;
 }
 
@@ -84,10 +84,11 @@ button {
 .map-meta {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 10px;
   color: var(--muted);
   font-size: 13px;
-  white-space: nowrap;
 }
 
 .map-meta span {
@@ -97,15 +98,56 @@ button {
   background: var(--panel);
 }
 
+.map-meta strong {
+  margin-left: 4px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.stats-banner {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stats-banner article {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: rgba(0, 0, 0, 0.16) 0 8px 18px;
+}
+
+.stats-banner span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.stats-banner strong {
+  display: block;
+  margin-top: 5px;
+  overflow: hidden;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .workspace {
   min-height: 0;
   flex: 1;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 280px;
   gap: 18px;
 }
 
-.sidebar {
+.control-sidebar {
   min-height: 0;
   padding: 16px;
   border: 1px solid var(--border);
@@ -115,38 +157,45 @@ button {
   overflow: auto;
 }
 
-.sidebar h2 {
+.panel-section + .panel-section {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.control-sidebar h2 {
   font-size: 16px;
   line-height: 1.2;
 }
 
-.sidebar dl {
+.control-sidebar dl {
   display: grid;
-  gap: 14px;
-  margin: 20px 0 0;
+  gap: 8px;
+  margin: 12px 0 0;
 }
 
-.sidebar dl div {
+.control-sidebar dl div {
   display: grid;
   gap: 3px;
 }
 
-.sidebar dt {
+.control-sidebar dt {
   color: var(--muted);
   font-size: 12px;
   text-transform: uppercase;
 }
 
-.sidebar dd {
+.control-sidebar dd {
   margin: 0;
   font-size: 14px;
+  font-variant-numeric: tabular-nums;
 }
 
 .grid-toggle {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 12px;
   color: var(--text);
   font-size: 14px;
   cursor: pointer;
@@ -159,33 +208,24 @@ button {
 }
 
 .viewer-controls,
-.download-controls,
-.seed-controls {
+.generator-controls,
+.view-export-controls {
   display: grid;
   gap: 8px;
-  margin-top: 22px;
 }
 
 .viewer-controls {
   grid-template-columns: 42px 1fr 42px;
-}
-
-.download-controls {
-  grid-template-columns: 1fr;
   margin-top: 10px;
 }
 
-.seed-controls {
-  grid-template-columns: 1fr;
-}
-
-.seed-controls > label {
+.generator-controls .seed-field {
   color: var(--muted);
   font-size: 12px;
   text-transform: uppercase;
 }
 
-.seed-controls input {
+.generator-controls input {
   min-height: 34px;
   min-width: 0;
   border: 1px solid var(--border);
@@ -215,8 +255,8 @@ button {
 }
 
 .viewer-controls button,
-.download-controls button,
-.seed-controls button {
+.generator-controls button,
+.view-export-controls > button {
   min-height: 34px;
   border: 1px solid var(--border);
   border-radius: 5px;
@@ -225,27 +265,35 @@ button {
 }
 
 .viewer-controls button:hover,
-.download-controls button:hover,
-.seed-controls button:hover {
+.generator-controls button:hover,
+.view-export-controls > button:hover {
   border-color: var(--accent);
 }
 
 .viewer-controls button:focus-visible,
-.download-controls button:focus-visible,
-.seed-controls button:focus-visible,
-.seed-controls input:focus-visible {
+.generator-controls button:focus-visible,
+.view-export-controls > button:focus-visible,
+.generator-controls input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 .terrain-legend {
-  margin-top: 22px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 2;
+  width: 190px;
+  padding: 12px;
+  border: 1px solid rgba(170, 181, 189, 0.42);
+  border-radius: 8px;
+  background: rgba(16, 21, 26, 0.82);
+  box-shadow: rgba(0, 0, 0, 0.32) 0 12px 28px;
+  backdrop-filter: blur(8px);
 }
 
 .terrain-legend h3 {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.2;
   text-transform: uppercase;
   color: var(--muted);
@@ -253,8 +301,8 @@ button {
 
 .terrain-legend ul {
   display: grid;
-  gap: 8px;
-  margin: 12px 0 0;
+  gap: 6px;
+  margin: 10px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -262,13 +310,16 @@ button {
 .terrain-legend li {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .terrain-swatch {
-  width: 16px;
-  height: 16px;
+  width: 13px;
+  height: 13px;
   flex: 0 0 auto;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 3px;

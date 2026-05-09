@@ -7,6 +7,7 @@ import {
 } from './browserGenerator.ts'
 import { downloadCanvasPng, downloadJson } from './downloads.ts'
 import { loadMapJson } from './loadMapJson.ts'
+import { calculateMapStats } from './mapStats.ts'
 import { createSampleMap } from './sampleMap.ts'
 import { randomSeed } from './seededRandom.ts'
 import {
@@ -38,47 +39,56 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <p id="status-line" class="status-line">Loading JSON sample map...</p>
     </div>
     <div class="map-meta" aria-label="Prototype map metadata">
-      <span>Phase 3C</span>
+      <span>Source <strong id="map-source">Loading</strong></span>
+      <span>Seed <strong id="map-seed">Loading</strong></span>
+      <span>Zoom <strong id="zoom-level">100%</strong></span>
+      <span>Rows <strong id="map-rows">Loading</strong></span>
+      <span>Cols <strong id="map-cols">Loading</strong></span>
+      <span>Total <strong id="map-tiles">Loading</strong></span>
       <span id="tile-count"></span>
     </div>
   </header>
 
+  <section class="stats-banner" aria-label="Map quality diagnostics">
+    <article>
+      <span>Land</span>
+      <strong id="stats-land">Loading</strong>
+    </article>
+    <article>
+      <span>Water</span>
+      <strong id="stats-water">Loading</strong>
+    </article>
+    <article>
+      <span>Edge Land</span>
+      <strong id="stats-edge-land">Loading</strong>
+    </article>
+    <article>
+      <span>Land Balance</span>
+      <strong id="stats-land-balance">Loading</strong>
+    </article>
+    <article>
+      <span>Edge Status</span>
+      <strong id="stats-edge-label">Loading</strong>
+    </article>
+  </section>
+
   <section class="workspace" aria-label="Map browser prototype">
-    <aside class="sidebar">
-      <h2>Sample Map</h2>
-      <dl>
-        <div>
-          <dt>Source</dt>
-          <dd id="map-source">Loading</dd>
-        </div>
-        <div>
-          <dt>Rows</dt>
-          <dd id="map-rows">Loading</dd>
-        </div>
-        <div>
-          <dt>Cols</dt>
-          <dd id="map-cols">Loading</dd>
-        </div>
-        <div>
-          <dt>Tiles</dt>
-          <dd id="map-tiles">Loading</dd>
-        </div>
-        <div>
-          <dt>Seed</dt>
-          <dd id="map-seed">Loading</dd>
-        </div>
-        <div>
-          <dt>Zoom</dt>
-          <dd id="zoom-level">100%</dd>
-        </div>
-      </dl>
-      <label class="grid-toggle">
-        <input id="grid-toggle" type="checkbox" checked />
-        <span>Show grid</span>
-      </label>
-      <div class="seed-controls" aria-label="Seed controls">
-        <label for="seed-input">Seed</label>
+    <div class="canvas-panel">
+      <canvas id="map-canvas" aria-label="Solid-color hex map prototype"></canvas>
+      <section class="terrain-legend" aria-label="Terrain legend">
+        <h3>Terrain</h3>
+        <ul id="terrain-legend"></ul>
+      </section>
+    </div>
+
+    <aside class="control-sidebar">
+      <section class="panel-section generator-controls" aria-label="Generator controls">
+        <h2>Generator</h2>
+        <label class="seed-field" for="seed-input">Seed</label>
         <input id="seed-input" type="number" inputmode="numeric" placeholder="Enter seed" />
+        <button id="generate-seed" type="button">Generate from Seed</button>
+        <button id="random-seed" type="button">Random Seed</button>
+        <button id="load-json-sample" type="button">Load Sample JSON</button>
         <label class="slider-control" for="sea-level">
           <span>Sea Level</span>
           <output id="sea-level-value"></output>
@@ -95,27 +105,23 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <input id="roughness" type="range" min="0.4" max="1.8" step="0.05" />
         </label>
         <button id="reset-generator-settings" type="button">Reset Generator Settings</button>
-        <button id="generate-seed" type="button">Generate from Seed</button>
-        <button id="random-seed" type="button">Random Seed</button>
-        <button id="load-json-sample" type="button">Load Sample JSON</button>
-      </div>
-      <div class="viewer-controls" aria-label="Map view controls">
-        <button id="zoom-out" type="button">-</button>
-        <button id="reset-view" type="button">Reset View</button>
-        <button id="zoom-in" type="button">+</button>
-      </div>
-      <div class="download-controls" aria-label="Download controls">
+      </section>
+
+      <section class="panel-section view-export-controls" aria-label="Map view and export controls">
+        <h2>View & Export</h2>
+        <label class="grid-toggle">
+          <input id="grid-toggle" type="checkbox" checked />
+          <span>Show grid</span>
+        </label>
+        <div class="viewer-controls" aria-label="Zoom controls">
+          <button id="zoom-out" type="button">-</button>
+          <button id="reset-view" type="button">Reset View</button>
+          <button id="zoom-in" type="button">+</button>
+        </div>
         <button id="download-json" type="button">Download JSON</button>
         <button id="download-png" type="button">Download PNG</button>
-      </div>
-      <section class="terrain-legend" aria-label="Terrain legend">
-        <h3>Terrain</h3>
-        <ul id="terrain-legend"></ul>
       </section>
     </aside>
-    <div class="canvas-panel">
-      <canvas id="map-canvas" aria-label="Solid-color hex map prototype"></canvas>
-    </div>
   </section>
 </main>
 `
@@ -130,6 +136,11 @@ const mapCols = document.querySelector<HTMLElement>('#map-cols')!
 const mapTiles = document.querySelector<HTMLElement>('#map-tiles')!
 const mapSeed = document.querySelector<HTMLElement>('#map-seed')!
 const zoomLevel = document.querySelector<HTMLElement>('#zoom-level')!
+const statsLand = document.querySelector<HTMLElement>('#stats-land')!
+const statsWater = document.querySelector<HTMLElement>('#stats-water')!
+const statsLandBalance = document.querySelector<HTMLElement>('#stats-land-balance')!
+const statsEdgeLand = document.querySelector<HTMLElement>('#stats-edge-land')!
+const statsEdgeLabel = document.querySelector<HTMLElement>('#stats-edge-label')!
 const gridToggle = document.querySelector<HTMLInputElement>('#grid-toggle')!
 const terrainLegend = document.querySelector<HTMLUListElement>('#terrain-legend')!
 const seedInput = document.querySelector<HTMLInputElement>('#seed-input')!
@@ -187,16 +198,36 @@ function updateMapDetails(map: HexMap, source: string): void {
 function setCurrentMap(map: HexMap, source: string): void {
   currentMap = map
   updateMapDetails(currentMap, source)
+  updateMapStats(currentMap)
   seedInput.value = currentMap.seed === null ? '' : String(currentMap.seed)
   resetView()
 }
 
-function renderTerrainLegend(): void {
+function updateMapStats(map: HexMap): void {
+  const stats = calculateMapStats(map)
+
+  statsLand.textContent = `${stats.landTiles} (${formatPercent(stats.landPercent)})`
+  statsWater.textContent = `${stats.waterTiles} (${formatPercent(stats.waterPercent)})`
+  statsLandBalance.textContent = stats.landBalanceLabel
+  statsEdgeLand.textContent = `${stats.edgeLandTiles} (${formatPercent(stats.edgeLandPercent)})`
+  statsEdgeLabel.textContent = stats.edgeLandLabel
+  renderTerrainLegend(stats.terrainCounts)
+}
+
+function formatPercent(value: number): string {
+  return `${value.toFixed(1)}%`
+}
+
+function formatTerrainName(terrain: Terrain): string {
+  return terrain.replaceAll('_', ' ')
+}
+
+function renderTerrainLegend(terrainCounts?: Record<Terrain, number>): void {
   terrainLegend.innerHTML = TERRAIN_ORDER.map(
     (terrain) => `
       <li>
         <span class="terrain-swatch" style="background: ${TERRAIN_COLORS[terrain]}"></span>
-        <span>${terrain}</span>
+        <span>${formatTerrainName(terrain)} (${terrainCounts?.[terrain] ?? 0})</span>
       </li>
     `,
   ).join('')
