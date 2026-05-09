@@ -468,9 +468,12 @@ This solves the current problem where mountains are too directly tied to the lan
 
 Implementation note: the browser generator now has a first proof pass for
 separate relief. The shaped land value still decides deep ocean, ocean, and land,
-while a separate seeded relief noise field classifies land tiles as plains,
-hills, mountains, or high mountains. This is not final topology, mountain range
-generation, lakes, rivers, cleanup, continent detection, or biome work.
+while a separate seeded relief noise field classifies land tiles. During the
+separate-relief proof branch, land relief is temporarily displayed as multiple
+`relief_*` bands so the value ranges are easier to tune. These bands are debug
+visualization, not final terrain or biome types. This is not final topology,
+mountain range generation, lakes, rivers, cleanup, continent detection, or biome
+work.
 
 ---
 

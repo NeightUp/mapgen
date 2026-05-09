@@ -17,9 +17,14 @@ const RELIEF_BASE_SCALE = 0.4
 const RELIEF_RIDGE_OCTAVES = 10
 const RELIEF_RIDGE_STRENGTH = 0.24
 const RELIEF_VALUE_OFFSET = -0.015
-const RELIEF_HILLS_THRESHOLD = 0.04
-const RELIEF_MOUNTAIN_THRESHOLD = 0.23
-const RELIEF_HIGH_MOUNTAIN_THRESHOLD = 0.39
+const RELIEF_BAND_VERY_LOW_MAX = -0.12
+const RELIEF_BAND_LOW_MAX = -0.06
+const RELIEF_BAND_LOW_MID_MAX = 0
+const RELIEF_BAND_MID_MAX = 0.06
+const RELIEF_BAND_HIGH_MID_MAX = 0.12
+const RELIEF_BAND_HIGH_MAX = 0.2
+const RELIEF_BAND_MOUNTAIN_MAX = 0.32
+const RELIEF_BAND_MOUNTAIN_AMOUNT_SHIFT = 0.08
 const EDGE_OCEAN_PRESSURE_WIDTH = 8
 const EDGE_OCEAN_MAX_PRESSURE = 0.42
 const EDGE_OCEAN_NOISE_STRENGTH = 1.2
@@ -70,7 +75,7 @@ export function generateBrowserMap(
       const isLand = separatedLandValue >= PLAINS
       const reliefValue = isLand ? reliefAt(row, col, reliefLayers, settings) : separatedLandValue
       const baseTerrain = isLand
-        ? terrainFromRelief(reliefValue, settings)
+        ? terrainFromReliefBand(reliefValue, settings)
         : terrainFromWaterValue(separatedLandValue)
       const terrain = applyPolarTerrainOverlay(row, baseTerrain, polarRandom)
       const adjustedElevation = adjustedDisplayValue(terrain, separatedLandValue, reliefValue)
@@ -328,24 +333,40 @@ function isLandTerrain(terrain: Terrain): boolean {
   return terrain !== 'deep_ocean' && terrain !== 'ocean'
 }
 
-function terrainFromRelief(reliefValue: number, settings: GeneratorSettings): Terrain {
+function terrainFromReliefBand(reliefValue: number, settings: GeneratorSettings): Terrain {
   const mountainAmount = clamp(settings.mountainAmount, 0.5, 1.8)
-  const highMountainThreshold = RELIEF_HIGH_MOUNTAIN_THRESHOLD / mountainAmount
-  const mountainThreshold = RELIEF_MOUNTAIN_THRESHOLD / mountainAmount
+  const bandedReliefValue =
+    reliefValue + (mountainAmount - 1) * RELIEF_BAND_MOUNTAIN_AMOUNT_SHIFT
 
-  if (reliefValue >= highMountainThreshold) {
-    return 'high_mountain'
+  if (bandedReliefValue < RELIEF_BAND_VERY_LOW_MAX) {
+    return 'relief_very_low'
   }
 
-  if (reliefValue >= mountainThreshold) {
-    return 'mountain'
+  if (bandedReliefValue < RELIEF_BAND_LOW_MAX) {
+    return 'relief_low'
   }
 
-  if (reliefValue >= RELIEF_HILLS_THRESHOLD) {
-    return 'hills'
+  if (bandedReliefValue < RELIEF_BAND_LOW_MID_MAX) {
+    return 'relief_low_mid'
   }
 
-  return 'plains'
+  if (bandedReliefValue < RELIEF_BAND_MID_MAX) {
+    return 'relief_mid'
+  }
+
+  if (bandedReliefValue < RELIEF_BAND_HIGH_MID_MAX) {
+    return 'relief_high_mid'
+  }
+
+  if (bandedReliefValue < RELIEF_BAND_HIGH_MAX) {
+    return 'relief_high'
+  }
+
+  if (bandedReliefValue < RELIEF_BAND_MOUNTAIN_MAX) {
+    return 'relief_mountain'
+  }
+
+  return 'relief_peak'
 }
 
 function terrainFromWaterValue(landValue: number): Terrain {
