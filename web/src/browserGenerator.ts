@@ -31,7 +31,7 @@ export interface GeneratorSettings {
 }
 
 export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
-  seaLevel: 0,
+  seaLevel: 0.05,
   mountainAmount: 1,
   roughness: 1,
 }
