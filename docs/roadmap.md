@@ -54,6 +54,8 @@ The key design principle is: land shape is not elevation.
 
 After land shape is more reliable, later generator work can move into separate internal relief, mountain ranges, basins, lakes, rivers, moisture, temperature, and biome layers.
 
+Map Lab is a planned developer-support path that should help tune this work across many seeds and settings. It is not a V1 user-facing requirement.
+
 ## Phase 0 - Repository Cleanup
 
 Status: Complete
@@ -256,6 +258,114 @@ Completion criteria:
 - User can export an image. Complete for visible Canvas PNG.
 - User can export JSON. Complete for current map data.
 
+## Developer Support Path - Map Lab
+
+Map Lab is the planned diagnostics and review workflow described in `docs/map-lab-diagnostics.md`. It should support generator tuning by exporting seed/settings data, map metrics, human map-type labels, ratings, flags, and notes. It does not replace procedural generation and should not be treated as a public V1 feature.
+
+### Map Lab Documentation
+
+Status: Complete
+
+Goal: Add the Map Lab spec to the project documentation plan.
+
+Tasks:
+
+- Add `docs/map-lab-diagnostics.md`.
+- Cross-link Map Lab from `README.md`, `docs/design.md`, `docs/roadmap.md`, and `docs/filemap.md`.
+- Keep this phase documentation-only.
+
+Completion criteria:
+
+- The project docs describe Map Lab as planned developer support tooling.
+- No source code, package files, generated files, or sample map JSON are changed for this phase.
+
+### Map Lab Data Types / Diagnostics
+
+Status: Not started
+
+Goal: Define review/diagnostic data structures and calculate diagnostics independently from rendering.
+
+Tasks:
+
+- Add review and diagnostic data types.
+- Add a diagnostics calculator that does not depend on Canvas rendering.
+- Export current seed, generator settings, and basic map metrics.
+
+Completion criteria:
+
+- Current map diagnostics can be represented as structured data.
+- Existing map stats can be exported without requiring a rendered screenshot.
+
+### Map Lab Review Panel
+
+Status: Not started
+
+Goal: Add a developer review workflow for the current generated map.
+
+Tasks:
+
+- Add observed map type dropdown.
+- Add ratings.
+- Add quick flags.
+- Add notes.
+- Save/export the current review.
+
+Completion criteria:
+
+- A developer can quickly label and rate one generated map.
+- The review export includes seed, settings, diagnostics, labels, ratings, flags, and notes.
+
+### Review Sessions
+
+Status: Not started
+
+Goal: Collect multiple reviewed maps from one tuning pass.
+
+Tasks:
+
+- Save multiple reviews in a local session.
+- Export session JSON.
+- Preserve enough metadata to compare review passes over time.
+
+Completion criteria:
+
+- A developer can review multiple maps and export one combined review-session file.
+
+### Batch Diagnostics
+
+Status: Not started
+
+Goal: Generate many maps from selected settings or presets and export a lightweight diagnostics dataset.
+
+Tasks:
+
+- Generate multiple maps from a seed count and settings/preset.
+- Calculate lightweight diagnostics for each map.
+- Export a combined diagnostics dataset.
+- Use exported data to tune generator settings.
+
+Completion criteria:
+
+- Generator changes can be evaluated across many seeds without manually inspecting every map first.
+
+### Scoring / Candidate Selection
+
+Status: Future optional goal
+
+Goal: Use diagnostics to score generated candidates against a target preset/profile.
+
+Tasks:
+
+- Define simple scoring rules for target map profiles.
+- Generate multiple candidate maps.
+- Score each candidate against the selected target.
+- Select the best candidate while keeping procedural generation as the source of maps.
+
+Completion criteria:
+
+- Candidate selection can reduce bad outputs before the user sees a final map.
+- Any scoring or lightweight ML experiments remain optional later work, not a near-term requirement.
+
 ## Phase 6 - Better World Layers
 
 Goal: Improve the usefulness of generated maps.
@@ -313,7 +423,7 @@ After meaningful changes, update the relevant docs before merging:
 - Update `docs/filemap.md` if files are added, removed, renamed, or significantly repurposed.
 - Update `docs/roadmap.md` if project status or next steps change.
 - Update `docs/design.md` if project direction or principles change.
-- Update focused design docs like `docs/land-shape-pipeline.md` if implementation decisions affect that system.
+- Update focused design docs like `docs/land-shape-pipeline.md` or `docs/map-lab-diagnostics.md` if implementation decisions affect those systems.
 
 Codex and other AI-assisted development should read `README.md`, `docs/design.md`, `docs/roadmap.md`, `docs/filemap.md`, and any relevant focused spec before editing code.
 
@@ -361,6 +471,7 @@ Immediate next steps:
 - Preserve current coastline character while improving map-edge ocean behavior.
 - Tune and review the initial continent separation pressure pass.
 - Review terrain and land/water distributions across several seeds.
+- Use the planned Map Lab workflow later to make this review more systematic.
 - Add land cleanup and continent detection after the initial land/water split is stable.
 - Keep the Python prototype preserved as a reference.
 
@@ -377,6 +488,7 @@ Python/Pygame prototype
   -> Canvas renderer
   -> browser-native generator
   -> land-shape pipeline
+  -> developer Map Lab diagnostics/review support
   -> relief, water, climate, and biome layers
   -> public V1 map generator
 ```

@@ -12,6 +12,8 @@ It is not a full biome, river, resource, or game-simulation design. Those system
 
 This is the focused design spec for the next generator phase. Keep `docs/design.md` broad, keep `docs/roadmap.md` current for phase/status tracking, and update this document when implementation decisions change the land-shape pipeline.
 
+The planned Map Lab workflow in `docs/map-lab-diagnostics.md` should eventually help evaluate this pipeline across many seeds by collecting diagnostics and review labels for land shape, adjusted land/coastal shaping, and later relief/elevation layers.
+
 ---
 
 ## Current Situation

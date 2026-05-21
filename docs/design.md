@@ -24,6 +24,7 @@ Mapgen is:
 - A hex-grid map viewer.
 - A browser-based map utility.
 - A tool for experimenting with terrain, elevation, water, biomes, rivers, and future map layers.
+- A project that will use planned developer diagnostics and review tooling to tune procedural generator quality across seeds and settings.
 - A project that should stay modular enough to eventually support game-specific rules or export formats.
 
 ## What Mapgen Is Not
@@ -37,6 +38,7 @@ Mapgen is not, for the early release:
 - A user account system.
 - A tile-art asset pipeline.
 - A full simulation of population, politics, economy, or warfare.
+- A system where diagnostics, review labels, scoring, or possible later ML experiments replace procedural generation.
 
 Those may matter later for Rift and Reign, but they should not distract from the map generator’s first usable release.
 
@@ -63,6 +65,8 @@ Each tile should eventually support fields like:
 - `start_score`
 
 Early versions do not need all of these fields, but the structure should allow them to be added without rewriting the whole project.
+
+Planned Map Lab diagnostics should follow the same data-first approach. Seed, settings, map metrics, observed map-type labels, ratings, flags, and notes should be exportable data that helps tune the procedural generator. Map Lab should help compare pangaea, balanced-continent, unbalanced-continent, archipelago, island-chain, continent-count, land-percentage, elevation-quality, biome-placement, and river/lake suitability goals across many seeds. It should not become the generator itself.
 
 ### 2. Separate Generation From Rendering
 
@@ -146,6 +150,8 @@ When a new idea comes up, ask:
 
 Good ideas should be recorded, but not all good ideas belong in V1.
 
+Map Lab belongs in this category for now. It is a planned developer-support workflow for generator tuning, not a V1 user-facing requirement.
+
 ### 8. Land Shape Is Not Elevation
 
 Detailed generator shaping work is guided by `docs/land-shape-pipeline.md`.
@@ -153,6 +159,8 @@ Detailed generator shaping work is guided by `docs/land-shape-pipeline.md`.
 This high-level design document should stay broad: it defines the project direction, release target, core boundaries, and major design principles. The land-shape pipeline document is the focused implementation/design spec for landmass generation, including coastline shape, land/water separation, edge ocean pressure, continent separation, cleanup, and later relief work.
 
 The key generator principle for the next phase is that land shape is not elevation. The value that decides coastlines and landmasses should become separate from the later values that decide internal relief, hills, mountains, basins, rivers, and biomes.
+
+Future Map Lab diagnostics should support this layered approach by measuring and reviewing land shape, adjusted land/coastal shaping, relief/elevation, terrain distribution, and later biome/resource/river layers as distinct concerns.
 
 ## Current Prototype State
 
@@ -245,6 +253,7 @@ V1 should not include:
 
 After the core generator is stable, possible future features include:
 
+- Developer Map Lab diagnostics and review sessions.
 - Biome layers.
 - Rivers and lakes.
 - Resource placement.
@@ -257,3 +266,5 @@ After the core generator is stable, possible future features include:
 - Tile asset themes.
 - Procedural decoration overlays.
 - Rift and Reign integration.
+
+Map Lab may eventually support lightweight scoring or candidate selection, and possibly small ML experiments if enough reviewed examples exist. Those are optional later experiments, not core near-term requirements.

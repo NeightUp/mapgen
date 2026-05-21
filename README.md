@@ -22,7 +22,7 @@ The browser app:
 
 - Loads tracked sample JSON from `web/public/sample-map.json`.
 - Renders hex maps on Canvas using solid terrain colors.
-- Supports pan, zoom, reset view, resize-safe layout, grid toggle, terrain legend, metadata, JSON download, and PNG download.
+- Supports pan, zoom, reset view, resize-safe layout, grid toggle, terrain legend, metadata, basic stats/diagnostics, JSON download, and PNG download.
 - Supports seed input, random seed, Generate from Seed, Load Sample JSON, Sea Level, Mountain Amount, Roughness, and Reset Generator Settings.
 
 The browser generator is functional, but it still needs generator-quality refinement. The current development focus is the next land-shape pipeline: land shape is not elevation.
@@ -42,6 +42,7 @@ The browser generator is functional, but it still needs generator-quality refine
 |   |-- design.md                High-level project design
 |   |-- roadmap.md               Development phases and next work
 |   |-- land-shape-pipeline.md   Detailed landmass generation spec
+|   |-- map-lab-diagnostics.md   Planned developer diagnostics/review workflow
 |   `-- filemap.md               Project file navigation map
 `-- web/
     |-- src/                     Browser app source
@@ -125,8 +126,9 @@ npm run build
 - [Roadmap](docs/roadmap.md)
 - [Project file map](docs/filemap.md)
 - [Land shape pipeline](docs/land-shape-pipeline.md)
+- [Map Lab diagnostics and review](docs/map-lab-diagnostics.md)
 
-The high-level design doc explains the project direction. The roadmap tracks phases and next work. The file map explains what each area of the repo does. The land-shape pipeline is the detailed design spec for the next generator phase.
+The high-level design doc explains the project direction. The roadmap tracks phases and next work. The file map explains what each area of the repo does. The land-shape pipeline is the detailed design spec for the next generator phase. Map Lab is the planned developer diagnostics/review workflow for improving generator quality through seed/settings exports, map metrics, and quick human review labels.
 
 ## Current Development Focus
 
@@ -141,6 +143,8 @@ The next coding focus is land-shape pipeline implementation and refinement:
 
 Detailed generator shaping work should follow `docs/land-shape-pipeline.md`.
 
+Map Lab is planned as future developer support tooling for reviewing generated maps across seeds and settings. It is not currently a user-facing browser feature or V1 release requirement.
+
 ## Documentation Maintenance
 
 After meaningful changes, update the relevant docs before merging:
@@ -149,7 +153,7 @@ After meaningful changes, update the relevant docs before merging:
 - Update `docs/filemap.md` if files are added, removed, renamed, or significantly repurposed.
 - Update `docs/roadmap.md` if project status or next steps change.
 - Update `docs/design.md` if project direction or principles change.
-- Update focused design docs like `docs/land-shape-pipeline.md` if implementation decisions affect that system.
+- Update focused design docs like `docs/land-shape-pipeline.md` or `docs/map-lab-diagnostics.md` if implementation decisions affect those systems.
 
 ## Notes For Codex And AI-Assisted Development
 
@@ -159,6 +163,6 @@ Before editing code, read:
 - `docs/design.md`
 - `docs/roadmap.md`
 - `docs/filemap.md`
-- Any focused spec relevant to the work, especially `docs/land-shape-pipeline.md` for generator changes.
+- Any focused spec relevant to the work, especially `docs/land-shape-pipeline.md` for generator changes and `docs/map-lab-diagnostics.md` for future diagnostics/review work.
 
 Keep changes scoped. Do not change code, package files, generated files, or sample data during documentation-only tasks.

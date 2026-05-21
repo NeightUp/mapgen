@@ -59,6 +59,11 @@ The browser app in `web/` is the release target. It uses Vite, TypeScript, and H
 - `web/src/sampleMap.ts`: Sample-map loading bridge for the browser app.
 - `web/src/style.css`: Browser app styling.
 
+Planned future browser diagnostics files:
+
+- `web/src/mapDiagnostics.ts`: Planned diagnostics calculator for map metrics and export-ready review data. Not yet implemented.
+- `web/src/mapReviewTypes.ts`: Planned TypeScript types for Map Lab review labels, ratings, flags, notes, exports, and sessions. Not yet implemented.
+
 Other web assets may exist under `web/public/` and `web/src/assets/`. Inspect them before editing; do not assume they are unused.
 
 ## Docs
@@ -66,6 +71,7 @@ Other web assets may exist under `web/public/` and `web/src/assets/`. Inspect th
 - `docs/design.md`: High-level project identity, design principles, scope, and long-term direction.
 - `docs/roadmap.md`: Current status, development flow, phases, and next planned work.
 - `docs/land-shape-pipeline.md`: Detailed land-shape and generator design spec for the next generator phase.
+- `docs/map-lab-diagnostics.md`: Focused spec for the future Map Lab diagnostics/review workflow, including map type labels, ratings, quick flags, notes, lightweight/full exports, review sessions, batch diagnostics, and future scoring possibilities.
 - `docs/filemap.md`: This project navigation map.
 
 ## Generated And Ignored Files
